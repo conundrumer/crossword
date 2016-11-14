@@ -1,0 +1,6 @@
+[package]
+name = "crossword"
+version = "0.1.0"
+authors = ["delu <davidelu93@gmail.com>"]
+
+[dependencies]
