@@ -1,7 +1,8 @@
-use std::fmt;
-use std::cmp;
-
 type Index = i32;
+const MAX_INDEX: Index = std::i32::MAX;
+const MIN_INDEX: Index = std::i32::MIN;
+
+type Grid = Vec<Vec<Option<char>>>;
 
 #[derive(Debug)]
 struct Crossword {
@@ -9,84 +10,63 @@ struct Crossword {
 }
 impl Crossword {
     fn bounding_box(&self) -> BoundingBox {
-        let mut top = Index::max_value();
-        let mut left = Index::max_value();
-        let mut bottom = Index::min_value();
-        let mut right = Index::min_value();
-        for &Word { letters, row, col, ref orientation } in &self.words {
-            top = cmp::min(top, row);
-            left = cmp::min(left, col);
-            match *orientation {
-                Horizontal => {
-                    bottom = cmp::max(bottom, row);
-                    right = cmp::max(right, col + letters.len() as Index);
-                },
-                Vertical => {
-                    bottom = cmp::max(bottom, row + letters.len() as Index);
-                    right = cmp::max(right, col);
-                }
+        use std::cmp::{min, max};
+        let (top, left, bottom, right) = self.words.iter().fold(
+            (MAX_INDEX, MAX_INDEX, MIN_INDEX, MIN_INDEX),
+            |(top, left, bottom, right), &Word { letters, row, col, ref orientation }| {
+                let (row_bottom, col_right) = match *orientation {
+                    Horizontal => (row, col + letters.len() as Index),
+                    Vertical => (letters.len() as Index, col)
+                };
+                (min(top, row), min(left, col), max(bottom, row_bottom), max(right, col_right))
             }
-        }
+        );
         BoundingBox {
             top: top,
             left: left,
-            width: (right - left) as Index,
-            height: (bottom - top) as Index
+            width: (right - left),
+            height: (bottom - top)
         }
     }
 
-    fn to_grid(&self) -> Vec<Vec<Option<char>>> {
+    fn to_valid_grid(&self, validate: bool) -> Option<Grid> {
         let bb = self.bounding_box();
         let mut grid = vec![vec![None; bb.width as usize]; bb.height as usize];
         for &Word { letters, row, col, ref orientation } in &self.words {
             let row = row as usize;
             let col = col as usize;
             for (i, c) in letters.chars().enumerate() {
-                match *orientation {
-                    Horizontal => {
-                        grid[row][col + i] = Some(c)
-                    },
-                    Vertical => {
-                        grid[row + i][col] = Some(c)
+                let (grid_row, grid_col) = match *orientation {
+                    Horizontal => (row, col + i),
+                    Vertical => (row + i, col)
+                };
+                if validate {
+                    if let Some(x) = grid[grid_row][grid_col] {
+                        if x != c {
+                            return None
+                        }
                     }
                 }
+                grid[grid_row][grid_col] = Some(c)
             }
         }
-        grid
+        return Some(grid)
+    }
+
+    fn to_grid(&self) -> Grid {
+        self.to_valid_grid(false).unwrap()
     }
 
     fn is_valid(&self) -> bool {
-        let bb = self.bounding_box();
-        let mut grid = vec![vec![None; bb.width as usize]; bb.height as usize];
-        for &Word { letters, row, col, ref orientation } in &self.words {
-            let row = row as usize;
-            let col = col as usize;
-            for (i, c) in letters.chars().enumerate() {
-                match *orientation {
-                    Horizontal => {
-                        if let Some(x) = grid[row][col + i] {
-                            if x != c {
-                                return false
-                            }
-                        }
-                        grid[row][col + i] = Some(c)
-                    },
-                    Vertical => {
-                        if let Some(x) = grid[row + i][col] {
-                            if x != c {
-                                return false
-                            }
-                        }
-                        grid[row + i][col] = Some(c)
-                    }
-                }
-            }
+        match self.to_valid_grid(true) {
+            None => false,
+            Some(_) => true
         }
-        return true
     }
 }
-impl fmt::Display for Crossword {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+use std::fmt::{Display, Formatter, Result};
+impl Display for Crossword {
+    fn fmt(&self, f: &mut Formatter) -> Result {
         let grid = self.to_grid();
         for (i, row) in grid.iter().enumerate() {
             for entry in row {
