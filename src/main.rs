@@ -14,15 +14,15 @@ impl Crossword {
         let (top, left, bottom, right) = self.words.iter().fold(
             (MAX_INDEX, MAX_INDEX, MIN_INDEX, MIN_INDEX),
             |(top, left, bottom, right), word| {
-                let (last_row, last_col) = word.last_pos();
-                (min(top, word.row), min(left, word.col), max(bottom, last_row), max(right, last_col))
+                let last_pos = word.last_pos();
+                (min(top, word.pos.row), min(left, word.pos.col), max(bottom, last_pos.row), max(right, last_pos.col))
             }
         );
         BoundingBox {
             top: top,
             left: left,
-            width: (right - left),
-            height: (bottom - top)
+            width: right - left + 1,
+            height: bottom - top + 1
         }
     }
 
@@ -31,16 +31,16 @@ impl Crossword {
         let mut grid = vec![vec![None; bb.width as usize]; bb.height as usize];
         for word in &self.words {
             for (i, c) in word.letters.chars().enumerate() {
-                let (grid_row, grid_col) = word.letter_pos(i as Index);
-                let (grid_row, grid_col) = (grid_row as usize, grid_col as usize);
+                let Position { row, col } = word.letter_pos(i as Index);
+                let (row, col) = (row as usize, col as usize);
                 if validate {
-                    if let Some(x) = grid[grid_row][grid_col] {
+                    if let Some(x) = grid[row][col] {
                         if x != c {
                             return None
                         }
                     }
                 }
-                grid[grid_row][grid_col] = Some(c)
+                grid[row][col] = Some(c)
             }
         }
         return Some(grid)
@@ -80,26 +80,34 @@ impl Display for Crossword {
 #[derive(Debug)]
 struct Word {
     letters: &'static str,
-    row: Index,
-    col: Index,
+    pos: Position,
     orientation: Orientation
 }
 impl Word {
     fn len(&self) -> Index {
         self.letters.len() as Index
     }
-    fn last_pos(&self) -> (Index, Index) {
+    fn letter_pos(&self, i: Index) -> Position {
         match self.orientation {
-            Horizontal => (self.row, self.col + self.len()),
-            Vertical => (self.row + self.len(), self.col)
+            Horizontal => Position {
+                row: self.pos.row,
+                col: self.pos.col + i
+            },
+            Vertical => Position {
+                row: self.pos.row + i,
+                col: self.pos.col
+            }
         }
     }
-    fn letter_pos(&self, i: Index) -> (Index, Index) {
-        match self.orientation {
-            Horizontal => (self.row, self.col + i),
-            Vertical => (self.row + i, self.col)
-        }
+    fn last_pos(&self) -> Position {
+        self.letter_pos((self.len() - 1) as Index)
     }
+}
+
+#[derive(Debug)]
+struct Position {
+    row: Index,
+    col: Index
 }
 
 #[derive(Debug)]
@@ -127,32 +135,57 @@ struct BoundingBox {
 4     d
  */
 
-fn make_hello_world() -> Crossword {
-    let hello = Word {
-        letters: "hello",
-        row: 3,
-        col: 0,
-        orientation: Horizontal
-    };
-    let world = Word {
-        letters: "world",
-        row: 0,
-        col: 2,
-        orientation: Vertical
-    };
-    Crossword {
-        words: vec![hello, world]
-    }
-}
-
 fn main() {
     let crossword = make_hello_world();
     println!("{}", crossword);
     println!("{}", crossword.is_valid());
 }
 
+fn make_hello() -> Word {
+    Word {
+        letters: "hello",
+        pos: Position {
+            row: 3,
+            col: 0
+        },
+        orientation: Horizontal
+    }
+}
+
+fn make_world() -> Word {
+    Word {
+        letters: "world",
+        pos: Position {
+            row: 0,
+            col: 2
+        },
+        orientation: Vertical
+    }
+}
+
 #[test]
-fn crossword_bounding_box() {
+fn last_pos() {
+    let hello = make_hello();
+    let Position { row, col } = hello.last_pos();
+    assert_eq!(3, row);
+    assert_eq!(4, col);
+
+    let world = make_world();
+    let Position { row, col } = world.last_pos();
+    assert_eq!(4, row);
+    assert_eq!(2, col);
+}
+
+fn make_hello_world() -> Crossword {
+    let hello = make_hello();
+    let world = make_world();
+    Crossword {
+        words: vec![hello, world]
+    }
+}
+
+#[test]
+fn bounding_box() {
     let crossword = make_hello_world();
     let bb = crossword.bounding_box();
     assert_eq!(0, bb.top);
@@ -174,6 +207,6 @@ fn is_valid() {
     assert!(crossword.is_valid());
 
     let mut invalid_crossword = make_hello_world();
-    invalid_crossword.words[0].row = 0;
+    invalid_crossword.words[0].pos.row = 0;
     assert!(!invalid_crossword.is_valid());
 }
