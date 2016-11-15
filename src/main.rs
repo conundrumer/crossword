@@ -31,13 +31,13 @@ impl Crossword {
             for (i, c) in word.letters.chars().enumerate() {
                 let letter_pos = word.letter_pos(i as GridIndex);
                 if validate {
-                    if let Some(x) = grid.get(&letter_pos) {
+                    if let Some(x) = grid[&letter_pos] {
                         if x != c {
                             return None
                         }
                     }
                 }
-                grid.set(&letter_pos, Some(c))
+                grid[&letter_pos] = Some(c)
             }
         }
         return Some(grid)
@@ -67,11 +67,18 @@ impl Grid {
     fn new(width: GridIndex, height: GridIndex) -> Grid {
         Grid(vec![vec![None; width as usize]; height as usize])
     }
-    fn get(&self, pos: &Position) -> Option<char> {
-        self.0[pos.row as usize][pos.col as usize]
+}
+use std::ops::{Index, IndexMut};
+impl<'a> Index<&'a Position> for Grid {
+    type Output = Option<char>;
+
+    fn index(&self, pos: &Position) -> &Option<char> {
+        &self.0[pos.row as usize][pos.col as usize]
     }
-    fn set(&mut self, pos: &Position, c: Option<char>) {
-        self.0[pos.row as usize][pos.col as usize] = c
+}
+impl<'a> IndexMut<&'a Position> for Grid {
+    fn index_mut(&mut self, pos: &Position) -> &mut Option<char> {
+        &mut self.0[pos.row as usize][pos.col as usize]
     }
 }
 impl Display for Grid {
