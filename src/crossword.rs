@@ -26,7 +26,7 @@ impl Crossword {
 
     fn to_valid_grid(&self, validate: bool) -> Option<Grid> {
         let bb = self.bounding_box();
-        let mut grid = Grid::new(bb.width, bb.height);
+        let mut grid = Grid::new(&bb);
         for word in &self.words {
             for (i, c) in word.letters.chars().enumerate() {
                 let letter_pos = word.letter_pos(i as GridIndex);

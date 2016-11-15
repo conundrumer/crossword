@@ -7,15 +7,19 @@ use placement::{ Position };
 use placement::Orientation::{ Horizontal, Vertical };
 use word::{ Word };
 use crossword::{ Crossword };
-/*
-  0 1 2 3 4
-0     w
-1     o
-2     r
-3 h e l l o
-4     d
- */
 
+fn main() {
+    let crossword = make_hello_world();
+    println!("{}", crossword);
+    println!("{}", crossword.is_valid());
+}
+
+//   0 1 2 3 4
+// 0
+// 1
+// 2
+// 3 h e l l o
+// 4
 fn make_hello() -> Word {
     Word {
         letters: "hello",
@@ -27,6 +31,12 @@ fn make_hello() -> Word {
     }
 }
 
+//   0 1 2 3 4
+// 0     w
+// 1     o
+// 2     r
+// 3     l
+// 4     d
 fn make_world() -> Word {
     Word {
         letters: "world",
@@ -38,18 +48,48 @@ fn make_world() -> Word {
     }
 }
 
-fn make_hello_world() -> Crossword {
-    let hello = make_hello();
-    let world = make_world();
-    Crossword {
-        words: vec![hello, world]
+//   0 1 2 3 4
+// 0
+// 1
+// 2   n
+// 3   a
+// 4   g
+#[cfg(test)]
+fn make_nag() -> Word {
+    Word {
+        letters: "nag",
+        pos: Position {
+            row: 2,
+            col: 1
+        },
+        orientation: Vertical
     }
 }
 
-fn main() {
-    let crossword = make_hello_world();
-    println!("{}", crossword);
-    println!("{}", crossword.is_valid());
+//   0 1 2 3 4
+// 0     w
+// 1     o
+// 2     r
+// 3 h e l l o
+// 4     d
+fn make_hello_world() -> Crossword {
+    Crossword {
+        words: vec![make_hello(), make_world()]
+    }
+}
+
+/* not valid! */
+//   0 1 2 3 4
+// 0
+// 1
+// 2   n
+// 3 h æ l l o
+// 4   g
+#[cfg(test)]
+fn make_hello_nag() -> Crossword {
+    Crossword {
+        words: vec![make_hello(), make_nag()]
+    }
 }
 
 #[test]
@@ -86,8 +126,10 @@ fn to_grid() {
 fn is_valid() {
     let crossword = make_hello_world();
     assert!(crossword.is_valid());
+}
 
-    let mut invalid_crossword = make_hello_world();
-    invalid_crossword.words[0].pos.row = 0;
+#[test]
+fn is_invalid() {
+    let invalid_crossword = make_hello_nag();
     assert!(!invalid_crossword.is_valid());
 }
