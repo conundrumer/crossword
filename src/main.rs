@@ -11,7 +11,7 @@ impl Crossword {
         let mut left = i32::max_value();
         let mut bottom = i32::min_value();
         let mut right = i32::min_value();
-        for &Word { letters, placement: Placement { row, col, ref orientation } } in &self.words {
+        for &Word { letters, row, col, ref orientation } in &self.words {
             top = cmp::min(top, row);
             left = cmp::min(left, col);
             match *orientation {
@@ -36,7 +36,7 @@ impl Crossword {
     fn to_grid(&self) -> Vec<Vec<Option<char>>> {
         let bb = self.bounding_box();
         let mut grid = vec![vec![None; bb.width as usize]; bb.height as usize];
-        for &Word { letters, placement: Placement { row, col, ref orientation } } in &self.words {
+        for &Word { letters, row, col, ref orientation } in &self.words {
             let row = row as usize;
             let col = col as usize;
             for (i, c) in letters.chars().enumerate() {
@@ -56,7 +56,7 @@ impl Crossword {
     fn is_valid(&self) -> bool {
         let bb = self.bounding_box();
         let mut grid = vec![vec![None; bb.width as usize]; bb.height as usize];
-        for &Word { letters, placement: Placement { row, col, ref orientation } } in &self.words {
+        for &Word { letters, row, col, ref orientation } in &self.words {
             let row = row as usize;
             let col = col as usize;
             for (i, c) in letters.chars().enumerate() {
@@ -105,11 +105,6 @@ impl fmt::Display for Crossword {
 #[derive(Debug)]
 struct Word {
     letters: &'static str,
-    placement: Placement
-}
-
-#[derive(Debug)]
-struct Placement {
     row: i32,
     col: i32,
     orientation: Orientation
@@ -143,19 +138,15 @@ struct BoundingBox {
 fn make_hello_world() -> Crossword {
     let hello = Word {
         letters: "hello",
-        placement: Placement {
-            row: 3,
-            col: 0,
-            orientation: Horizontal
-        }
+        row: 3,
+        col: 0,
+        orientation: Horizontal
     };
     let world = Word {
         letters: "world",
-        placement: Placement {
-            row: 0,
-            col: 2,
-            orientation: Vertical
-        }
+        row: 0,
+        col: 2,
+        orientation: Vertical
     };
     Crossword {
         words: vec![hello, world]
@@ -191,6 +182,6 @@ fn is_valid() {
     assert!(crossword.is_valid());
 
     let mut invalid_crossword = make_hello_world();
-    invalid_crossword.words[0].placement.row = 0;
+    invalid_crossword.words[0].row = 0;
     assert!(!invalid_crossword.is_valid());
 }
