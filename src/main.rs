@@ -1,26 +1,28 @@
 use std::fmt;
 use std::cmp;
 
+type Index = i32;
+
 #[derive(Debug)]
 struct Crossword {
     words: Vec<Word>
 }
 impl Crossword {
     fn bounding_box(&self) -> BoundingBox {
-        let mut top = i32::max_value();
-        let mut left = i32::max_value();
-        let mut bottom = i32::min_value();
-        let mut right = i32::min_value();
+        let mut top = Index::max_value();
+        let mut left = Index::max_value();
+        let mut bottom = Index::min_value();
+        let mut right = Index::min_value();
         for &Word { letters, row, col, ref orientation } in &self.words {
             top = cmp::min(top, row);
             left = cmp::min(left, col);
             match *orientation {
                 Horizontal => {
                     bottom = cmp::max(bottom, row);
-                    right = cmp::max(right, col + letters.len() as i32);
+                    right = cmp::max(right, col + letters.len() as Index);
                 },
                 Vertical => {
-                    bottom = cmp::max(bottom, row + letters.len() as i32);
+                    bottom = cmp::max(bottom, row + letters.len() as Index);
                     right = cmp::max(right, col);
                 }
             }
@@ -28,8 +30,8 @@ impl Crossword {
         BoundingBox {
             top: top,
             left: left,
-            width: (right - left) as u32,
-            height: (bottom - top) as u32
+            width: (right - left) as Index,
+            height: (bottom - top) as Index
         }
     }
 
@@ -105,8 +107,8 @@ impl fmt::Display for Crossword {
 #[derive(Debug)]
 struct Word {
     letters: &'static str,
-    row: i32,
-    col: i32,
+    row: Index,
+    col: Index,
     orientation: Orientation
 }
 
@@ -120,10 +122,10 @@ use Orientation::*;
 
 #[derive(Debug)]
 struct BoundingBox {
-    top: i32,
-    left: i32,
-    width: u32,
-    height: u32
+    top: Index,
+    left: Index,
+    width: Index,
+    height: Index
 }
 
 /*
