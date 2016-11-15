@@ -13,12 +13,9 @@ impl Crossword {
         use std::cmp::{min, max};
         let (top, left, bottom, right) = self.words.iter().fold(
             (MAX_INDEX, MAX_INDEX, MIN_INDEX, MIN_INDEX),
-            |(top, left, bottom, right), &Word { letters, row, col, ref orientation }| {
-                let (row_bottom, col_right) = match *orientation {
-                    Horizontal => (row, col + letters.len() as Index),
-                    Vertical => (letters.len() as Index, col)
-                };
-                (min(top, row), min(left, col), max(bottom, row_bottom), max(right, col_right))
+            |(top, left, bottom, right), word| {
+                let (last_row, last_col) = word.last_pos();
+                (min(top, word.row), min(left, word.col), max(bottom, last_row), max(right, last_col))
             }
         );
         BoundingBox {
@@ -32,14 +29,10 @@ impl Crossword {
     fn to_valid_grid(&self, validate: bool) -> Option<Grid> {
         let bb = self.bounding_box();
         let mut grid = vec![vec![None; bb.width as usize]; bb.height as usize];
-        for &Word { letters, row, col, ref orientation } in &self.words {
-            let row = row as usize;
-            let col = col as usize;
-            for (i, c) in letters.chars().enumerate() {
-                let (grid_row, grid_col) = match *orientation {
-                    Horizontal => (row, col + i),
-                    Vertical => (row + i, col)
-                };
+        for word in &self.words {
+            for (i, c) in word.letters.chars().enumerate() {
+                let (grid_row, grid_col) = word.letter_pos(i as Index);
+                let (grid_row, grid_col) = (grid_row as usize, grid_col as usize);
                 if validate {
                     if let Some(x) = grid[grid_row][grid_col] {
                         if x != c {
@@ -90,6 +83,23 @@ struct Word {
     row: Index,
     col: Index,
     orientation: Orientation
+}
+impl Word {
+    fn len(&self) -> Index {
+        self.letters.len() as Index
+    }
+    fn last_pos(&self) -> (Index, Index) {
+        match self.orientation {
+            Horizontal => (self.row, self.col + self.len()),
+            Vertical => (self.row + self.len(), self.col)
+        }
+    }
+    fn letter_pos(&self, i: Index) -> (Index, Index) {
+        match self.orientation {
+            Horizontal => (self.row, self.col + i),
+            Vertical => (self.row + i, self.col)
+        }
+    }
 }
 
 #[derive(Debug)]
