@@ -1,6 +1,6 @@
-type Index = i32;
-const MAX_INDEX: Index = std::i32::MAX;
-const MIN_INDEX: Index = std::i32::MIN;
+type GridIndex = i32;
+const MAX_INDEX: GridIndex = std::i32::MAX;
+const MIN_INDEX: GridIndex = std::i32::MIN;
 
 #[derive(Debug)]
 struct Crossword {
@@ -29,7 +29,7 @@ impl Crossword {
         let mut grid = Grid::new(bb.width, bb.height);
         for word in &self.words {
             for (i, c) in word.letters.chars().enumerate() {
-                let letter_pos = word.letter_pos(i as Index);
+                let letter_pos = word.letter_pos(i as GridIndex);
                 if validate {
                     if let Some(x) = grid.get(&letter_pos) {
                         if x != c {
@@ -64,7 +64,7 @@ impl Display for Crossword {
 #[derive(Debug)]
 struct Grid(Vec<Vec<Option<char>>>);
 impl Grid {
-    fn new(width: Index, height: Index) -> Grid {
+    fn new(width: GridIndex, height: GridIndex) -> Grid {
         Grid(vec![vec![None; width as usize]; height as usize])
     }
     fn get(&self, pos: &Position) -> Option<char> {
@@ -99,10 +99,10 @@ struct Word {
     orientation: Orientation
 }
 impl Word {
-    fn len(&self) -> Index {
-        self.letters.len() as Index
+    fn len(&self) -> GridIndex {
+        self.letters.len() as GridIndex
     }
-    fn letter_pos(&self, i: Index) -> Position {
+    fn letter_pos(&self, i: GridIndex) -> Position {
         match self.orientation {
             Horizontal => Position {
                 row: self.pos.row,
@@ -115,14 +115,14 @@ impl Word {
         }
     }
     fn last_pos(&self) -> Position {
-        self.letter_pos((self.len() - 1) as Index)
+        self.letter_pos((self.len() - 1) as GridIndex)
     }
 }
 
 #[derive(Debug)]
 struct Position {
-    row: Index,
-    col: Index
+    row: GridIndex,
+    col: GridIndex
 }
 
 #[derive(Debug)]
@@ -135,10 +135,10 @@ use Orientation::*;
 
 #[derive(Debug)]
 struct BoundingBox {
-    top: Index,
-    left: Index,
-    width: Index,
-    height: Index
+    top: GridIndex,
+    left: GridIndex,
+    width: GridIndex,
+    height: GridIndex
 }
 
 /*
