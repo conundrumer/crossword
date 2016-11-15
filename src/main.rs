@@ -2,8 +2,6 @@ type Index = i32;
 const MAX_INDEX: Index = std::i32::MAX;
 const MIN_INDEX: Index = std::i32::MIN;
 
-type Grid = Vec<Vec<Option<char>>>;
-
 #[derive(Debug)]
 struct Crossword {
     words: Vec<Word>
@@ -28,19 +26,18 @@ impl Crossword {
 
     fn to_valid_grid(&self, validate: bool) -> Option<Grid> {
         let bb = self.bounding_box();
-        let mut grid = vec![vec![None; bb.width as usize]; bb.height as usize];
+        let mut grid = Grid::new(bb.width, bb.height);
         for word in &self.words {
             for (i, c) in word.letters.chars().enumerate() {
-                let Position { row, col } = word.letter_pos(i as Index);
-                let (row, col) = (row as usize, col as usize);
+                let letter_pos = word.letter_pos(i as Index);
                 if validate {
-                    if let Some(x) = grid[row][col] {
+                    if let Some(x) = grid.get(&letter_pos) {
                         if x != c {
                             return None
                         }
                     }
                 }
-                grid[row][col] = Some(c)
+                grid.set(&letter_pos, Some(c))
             }
         }
         return Some(grid)
@@ -60,7 +57,26 @@ impl Crossword {
 use std::fmt::{Display, Formatter, Result};
 impl Display for Crossword {
     fn fmt(&self, f: &mut Formatter) -> Result {
-        let grid = self.to_grid();
+        write!(f, "{}", self.to_grid())
+    }
+}
+
+#[derive(Debug)]
+struct Grid(Vec<Vec<Option<char>>>);
+impl Grid {
+    fn new(width: Index, height: Index) -> Grid {
+        Grid(vec![vec![None; width as usize]; height as usize])
+    }
+    fn get(&self, pos: &Position) -> Option<char> {
+        self.0[pos.row as usize][pos.col as usize]
+    }
+    fn set(&mut self, pos: &Position, c: Option<char>) {
+        self.0[pos.row as usize][pos.col as usize] = c
+    }
+}
+impl Display for Grid {
+    fn fmt(&self, f: &mut Formatter) -> Result {
+        let &Grid(ref grid) = self;
         for (i, row) in grid.iter().enumerate() {
             for entry in row {
                 match *entry {
@@ -75,7 +91,6 @@ impl Display for Crossword {
         write!(f, "")
     }
 }
-
 
 #[derive(Debug)]
 struct Word {
