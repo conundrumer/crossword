@@ -1,49 +1,101 @@
 use std::fmt::{Display, Formatter, Result};
-use std::ops::{Index, IndexMut};
 
-use placement::{ Position, GridIndex, BoundingBox };
+use placement::{ Position, GridIndex, BoundingBox, Orientation };
+use placement::Orientation::{ Horizontal, Vertical };
+
+#[derive(Debug, Copy, Clone, PartialEq)]
+enum GridCell {
+    Empty,
+    Block(Option<Orientation>),
+    Letter(char, Option<Orientation>),
+    Collision
+}
+use self::GridCell::*;
 
 #[derive(Debug)]
 pub struct Grid {
-    grid: Vec<Vec<Option<char>>>,
-    top: GridIndex,
-    left: GridIndex
+    grid: Vec<Vec<GridCell>>,
+    bb: BoundingBox
 }
 impl Grid {
-    pub fn new(bb: &BoundingBox) -> Grid {
+    pub fn new(bb: BoundingBox) -> Grid {
         Grid {
-            grid: vec![vec![None; bb.width as usize]; bb.height as usize],
-            top: bb.top,
-            left: bb.left
+            grid: vec![vec![Empty; 2 + bb.width() as usize]; 2 + bb.height() as usize],
+            bb: bb
         }
     }
     fn row(&self, row: GridIndex) -> usize {
-        (row - self.top) as usize
+        (row - self.bb.top + 1) as usize
     }
     fn col(&self, col: GridIndex) -> usize {
-        (col - self.left) as usize
+        (col - self.bb.left + 1) as usize
     }
-}
-impl<'a> Index<&'a Position> for Grid {
-    type Output = Option<char>;
-
-    fn index(&self, pos: &Position) -> &Option<char> {
-        &self.grid[self.row(pos.row)][self.col(pos.col)]
-    }
-}
-impl<'a> IndexMut<&'a Position> for Grid {
-    fn index_mut(&mut self, pos: &Position) -> &mut Option<char> {
+    // pub fn get(&self, pos: Position) -> Option<char> {
+    //     match self.grid[self.row(pos.row)][self.col(pos.col)] {
+    //         Letter(c) => Some(c),
+    //         _ => None
+    //     }
+    // }
+    pub fn set_block(&mut self, pos: Position) -> bool {
         let (row, col) = (self.row(pos.row), self.col(pos.col));
-        &mut self.grid[row][col]
+        self.set_cell(row, col, Block(None))
+    }
+    pub fn set_char(&mut self, pos: Position, orient: Orientation, c: char) -> bool {
+        let (row, col) = (self.row(pos.row), self.col(pos.col));
+        match orient {
+            Horizontal => {
+                self.set_cell(row - 1, col, Block(Some(orient)));
+                self.set_cell(row + 1, col, Block(Some(orient)));
+            },
+            Vertical => {
+                self.set_cell(row, col - 1, Block(Some(orient)));
+                self.set_cell(row, col + 1, Block(Some(orient)));
+            }
+        }
+        self.set_cell(row, col, Letter(c, Some(orient)))
+    }
+    fn set_cell(&mut self, row: usize, col: usize, cell: GridCell) -> bool {
+        // cell: Block(Some(_)), Block(None), Letter(_, Some(_))
+        // old_cell: Empty, Block(Some(_)), Block(None), Letter(_, Some(_)), Letter(_, None), Collision
+        let old_cell = self.grid[row][col];
+        let next_cell = match (cell, old_cell) {
+            (_, Empty) => {
+                cell
+            },
+            (Block(Some(o1)), Block(Some(o2))) if o1 == o2 => {
+                Block(Some(o1))
+            },
+            (Block(_), Block(_)) => {
+                Block(None)
+            },
+            (Letter(c, Some(o1)), Block(Some(o2))) | (Block(Some(o2)), Letter(c, Some(o1))) if o1 != o2 => {
+                Letter(c, None)
+            },
+            (Letter(c1, Some(o1)), Letter(c2, Some(o2))) if c1 == c2 && o1 != o2 => {
+                Letter(c1, None)
+            },
+            (_, _) => match cell {
+                Block(_) | Letter(_, Some(_)) => Collision,
+                _ => unreachable!()
+            }
+        };
+        self.grid[row][col] = next_cell;
+        next_cell == Collision
     }
 }
+
 impl Display for Grid {
     fn fmt(&self, f: &mut Formatter) -> Result {
         for (i, row) in self.grid.iter().enumerate() {
             for entry in row {
                 match *entry {
-                    Some(c) => try!(write!(f, "{}", c)),
-                    None => try!(write!(f, " "))
+                    // Empty => try!(write!(f, " ")),
+                    // Block(Some(Horizontal)) => try!(write!(f, "─")),
+                    // Block(Some(Vertical)) => try!(write!(f, "│")),
+                    // Block(None) => try!(write!(f, "┼")),
+                    Empty | Block(_) => try!(write!(f, " ")),
+                    Letter(c, _) => try!(write!(f, "{}", c)),
+                    Collision => try!(write!(f, "*"))
                 }
             }
             if i != self.grid.len() - 1 {

@@ -4,13 +4,13 @@ pub type GridIndex = i32;
 pub const MAX_INDEX: GridIndex = std::i32::MAX;
 pub const MIN_INDEX: GridIndex = std::i32::MIN;
 
-#[derive(Debug)]
+#[derive(Debug, Copy, Clone)]
 pub struct Position {
     pub row: GridIndex,
     pub col: GridIndex
 }
 
-#[derive(Debug)]
+#[derive(Debug, Copy, Clone, PartialEq)]
 pub enum Orientation {
     Horizontal,
     Vertical
@@ -20,6 +20,17 @@ pub enum Orientation {
 pub struct BoundingBox {
     pub top: GridIndex,
     pub left: GridIndex,
-    pub width: GridIndex,
-    pub height: GridIndex
+    pub right: GridIndex,
+    pub bottom: GridIndex
+}
+impl BoundingBox {
+  pub fn new(top: GridIndex, left: GridIndex, bottom: GridIndex, right: GridIndex) -> BoundingBox {
+    BoundingBox { top: top, left: left, right: right, bottom: bottom }
+  }
+  pub fn width(&self) -> GridIndex {
+    self.right - self.left + 1
+  }
+  pub fn height(&self) -> GridIndex {
+    self.bottom - self.top + 1
+  }
 }

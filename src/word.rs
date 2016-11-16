@@ -8,7 +8,7 @@ pub struct Word {
     pub orientation: Orientation
 }
 impl Word {
-    fn len(&self) -> GridIndex {
+    pub fn len(&self) -> GridIndex {
         self.letters.len() as GridIndex
     }
     pub fn letter_pos(&self, i: GridIndex) -> Position {

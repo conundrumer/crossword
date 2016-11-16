@@ -16,28 +16,28 @@ impl Crossword {
                 (min(top, word.pos.row), min(left, word.pos.col), max(bottom, last_pos.row), max(right, last_pos.col))
             }
         );
-        BoundingBox {
-            top: top,
-            left: left,
-            width: right - left + 1,
-            height: bottom - top + 1
-        }
+        BoundingBox::new(top, left, bottom, right)
     }
 
     fn to_valid_grid(&self, validate: bool) -> Option<Grid> {
         let bb = self.bounding_box();
-        let mut grid = Grid::new(&bb);
+        let mut grid = Grid::new(bb);
         for word in &self.words {
-            for (i, c) in word.letters.chars().enumerate() {
-                let letter_pos = word.letter_pos(i as GridIndex);
+            // TODO: use an extended array/iter lib to append things more cleanly
+            let startpoint = Some((word.letter_pos(-1), None)).into_iter();
+            let endpoint = Some((word.letter_pos(word.len()), None)).into_iter();
+            let chars = word.letters.chars().enumerate().map(|(i, c)| (word.letter_pos(i as GridIndex), Some(c)));
+
+            for (pos, opt_c) in startpoint.chain(chars).chain(endpoint) {
+                let collided = match opt_c {
+                    None => grid.set_block(pos),
+                    Some(c) => grid.set_char(pos, word.orientation, c)
+                };
                 if validate {
-                    if let Some(x) = grid[&letter_pos] {
-                        if x != c {
-                            return None
-                        }
+                    if collided {
+                        return None
                     }
                 }
-                grid[&letter_pos] = Some(c)
             }
         }
         return Some(grid)
