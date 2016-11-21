@@ -1,3 +1,8 @@
+#![allow(unused_features)]
+#![feature(test)]
+#[cfg(test)]
+extern crate test;
+
 mod placement;
 mod grid;
 mod word;
@@ -5,6 +10,8 @@ mod crossword;
 mod generate;
 #[cfg(test)]
 mod tests;
+#[cfg(test)]
+mod bench;
 
 use generate::Generator;
 
