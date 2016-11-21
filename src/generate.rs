@@ -19,8 +19,7 @@ impl Generator for SimpleGenerator {
         let word = cloned_words.remove(0);
         let first_word = Word {
             letters: word,
-            pos: Position { row: 0, col: 0 },
-            orientation: Horizontal
+            pos: Position { row: 0, col: 0, dir: Horizontal }
         };
         let crosswords = crosswords_from_word_vec(Crossword { words: vec![first_word] }, cloned_words);
         // remove duplicates using hashmap and string equality
@@ -52,14 +51,13 @@ fn crosswords_from_word<'a> (crossword: Crossword<'a>, new_word: &'a str) -> Vec
                 if c1 != c2 {
                     return None
                 }
-                let (o, row, col) = match word.orientation {
-                    Horizontal => (Vertical, pos.row - i, pos.col),
-                    Vertical => (Horizontal, pos.row, word.pos.col - i)
+                let (row, col, dir) = match word.pos.dir {
+                    Horizontal => (pos.row - i, pos.col, Vertical),
+                    Vertical => (pos.row, word.pos.col - i, Horizontal)
                 };
                 let next_crossword = crossword.add(Word {
                     letters: new_word,
-                    pos: Position { row: row, col: col },
-                    orientation: o
+                    pos: Position { row: row, col: col, dir: dir }
                 });
                 if next_crossword.is_valid() {
                     Some(next_crossword)

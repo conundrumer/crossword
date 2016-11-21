@@ -7,16 +7,17 @@ pub const MIN_INDEX: GridIndex = std::i32::MIN;
 #[derive(Debug, Copy, Clone, PartialEq, Eq)]
 pub struct Position {
     pub row: GridIndex,
-    pub col: GridIndex
+    pub col: GridIndex,
+    pub dir: Direction
 }
 
-#[derive(Debug, Copy, Clone, PartialEq)]
+#[derive(Debug, Copy, Clone, PartialEq, Eq)]
 pub enum Direction {
     Horizontal,
     Vertical
 }
 
-#[derive(Debug)]
+#[derive(Debug, Copy, Clone, PartialEq, Eq)]
 pub struct BoundingBox {
     pub top: GridIndex,
     pub left: GridIndex,

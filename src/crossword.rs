@@ -43,7 +43,7 @@ impl<'a> Crossword<'a> {
             for (pos, opt_c) in startpoint.chain(chars).chain(endpoint) {
                 let collided = match opt_c {
                     None => grid.set_block(pos),
-                    Some(c) => grid.set_char(pos, word.orientation, c)
+                    Some(c) => grid.set_char(pos, word.pos.dir, c)
                 };
                 if validate {
                     if collided {

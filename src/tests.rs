@@ -1,4 +1,4 @@
-use placement::{ Position };
+use placement::{ Position, BoundingBox };
 use placement::Direction::{ Horizontal, Vertical };
 use word::{ Word };
 use crossword::{ Crossword };
@@ -12,11 +12,7 @@ use crossword::{ Crossword };
 fn make_hello() -> Word<'static> {
     Word {
         letters: "hello",
-        pos: Position {
-            row: 3,
-            col: 0
-        },
-        orientation: Horizontal
+        pos: Position { row: 3, col: 0, dir: Horizontal }
     }
 }
 
@@ -29,11 +25,7 @@ fn make_hello() -> Word<'static> {
 fn make_world() -> Word<'static> {
     Word {
         letters: "world",
-        pos: Position {
-            row: 0,
-            col: 2
-        },
-        orientation: Vertical
+        pos: Position { row: 0, col: 2, dir: Vertical }
     }
 }
 
@@ -52,24 +44,17 @@ fn make_hello_world() -> Crossword<'static> {
 #[test]
 fn last_pos() {
     let hello = make_hello();
-    let Position { row, col } = hello.last_pos();
-    assert_eq!(3, row);
-    assert_eq!(4, col);
+    assert_eq!(Position { row: 3, col: 4, dir: Horizontal }, hello.last_pos());
 
     let world = make_world();
-    let Position { row, col } = world.last_pos();
-    assert_eq!(4, row);
-    assert_eq!(2, col);
+    assert_eq!(Position { row: 4, col: 2, dir: Vertical }, world.last_pos());
 }
 
 #[test]
 fn bounding_box() {
     let crossword = make_hello_world();
     let bb = crossword.bounding_box();
-    assert_eq!(0, bb.top);
-    assert_eq!(0, bb.left);
-    assert_eq!(4, bb.bottom);
-    assert_eq!(4, bb.right);
+    assert_eq!(BoundingBox { top: 0, left: 0, bottom: 4, right: 4 }, bb);
 }
 
 #[test]
@@ -98,11 +83,7 @@ fn is_valid() {
 fn make_nag() -> Word<'static> {
     Word {
         letters: "nag",
-        pos: Position {
-            row: 2,
-            col: 1
-        },
-        orientation: Vertical
+        pos: Position { row: 2, col: 1, dir: Vertical }
     }
 }
 
@@ -115,11 +96,7 @@ fn make_nag() -> Word<'static> {
 fn make_bye() -> Word<'static> {
     Word {
         letters: "bye",
-        pos: Position {
-            row: 0,
-            col: 3
-        },
-        orientation: Vertical
+        pos: Position { row: 0, col: 3, dir: Vertical }
     }
 }
 
@@ -132,11 +109,7 @@ fn make_bye() -> Word<'static> {
 fn make_no() -> Word<'static> {
     Word {
         letters: "no",
-        pos: Position {
-            row: 2,
-            col: 2
-        },
-        orientation: Horizontal
+        pos: Position { row: 2, col: 2, dir: Horizontal }
     }
 }
 
@@ -149,11 +122,7 @@ fn make_no() -> Word<'static> {
 fn make_hey() -> Word<'static> {
     Word {
         letters: "hey",
-        pos: Position {
-            row: 3,
-            col: 0
-        },
-        orientation: Horizontal
+        pos: Position { row: 3, col: 0, dir: Horizontal }
     }
 }
 
@@ -225,10 +194,10 @@ fn test_generate<T: Generator> () {
     ], opts);
     let expected = Crossword {
         words: vec![
-            Word { letters: "ton", pos: Position { row: 0, col: 0 }, orientation: Horizontal },
-            Word { letters: "nob", pos: Position { row: 0, col: 2 }, orientation: Vertical },
-            Word { letters: "kob", pos: Position { row: 2, col: 0 }, orientation: Horizontal },
-            Word { letters: "tok", pos: Position { row: 0, col: 0 }, orientation: Vertical }
+            Word { letters: "ton", pos: Position { row: 0, col: 0, dir: Horizontal } },
+            Word { letters: "nob", pos: Position { row: 0, col: 2, dir: Vertical } },
+            Word { letters: "kob", pos: Position { row: 2, col: 0, dir: Horizontal } },
+            Word { letters: "tok", pos: Position { row: 0, col: 0, dir: Vertical } }
         ]
     };
     assert_eq!(1, crosswords.len());
