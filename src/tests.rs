@@ -183,10 +183,11 @@ fn is_valid_diagonal() {
     assert!(diagonal_crossword.is_valid());
 }
 
-use generate::{ Generator, SimpleGenerator };
-fn test_generate<T: Generator> () {
+use generate::Generator;
+#[test]
+fn test_generate () {
     let opts = (1, 5, 5);
-    let crosswords = <T as Generator>::generate(vec![
+    let crosswords = Generator::generate(vec![
         "ton",
         "tok",
         "nob",
@@ -203,16 +204,11 @@ fn test_generate<T: Generator> () {
     assert_eq!(1, crosswords.len());
     assert_eq!(format!("{}", crosswords[0]), format!("{}", expected));
 
-    let crosswords = <T as Generator>::generate(vec![
+    let crosswords = Generator::generate(vec![
         "toon",
         "took",
         "noob",
         "koob"
     ], opts);
     assert_eq!(22, crosswords.len());
-}
-
-#[test]
-fn simple_generator() {
-    test_generate::<SimpleGenerator>();
 }

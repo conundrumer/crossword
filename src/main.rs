@@ -6,10 +6,10 @@ mod generate;
 #[cfg(test)]
 mod tests;
 
-use generate::{ Generator, SimpleGenerator };
+use generate::Generator;
 
 fn main() {
-    let crosswords = <SimpleGenerator as Generator>::generate(vec![
+    let crosswords = Generator::generate(vec![
         "toon",
         "took",
         "noob",

@@ -5,13 +5,10 @@ use crossword::{ Crossword };
 use placement::{ Position, GridIndex };
 use placement::Direction::{ Horizontal, Vertical };
 
-pub trait Generator {
-    fn generate(words: Vec<&str>, opts: (usize, GridIndex, GridIndex)) -> Vec<Crossword>;
-}
-
-pub struct SimpleGenerator;
-impl Generator for SimpleGenerator {
-    fn generate(init_words: Vec<&str>, _opts: (usize, GridIndex, GridIndex)) -> Vec<Crossword> {
+pub struct Generator;
+impl Generator {
+    // simple generator
+    pub fn generate(init_words: Vec<&str>, _opts: (usize, GridIndex, GridIndex)) -> Vec<Crossword> {
         if init_words.len() == 0 {
             return vec![];
         }
