@@ -2,8 +2,8 @@ use std::collections::HashMap;
 
 use word::{ Word };
 use crossword::{ Crossword };
-use placement::{ Position, GridIndex, /*Orientation*/ };
-use placement::Orientation::{ Horizontal, Vertical };
+use placement::{ Position, GridIndex, /*Direction*/ };
+use placement::Direction::{ Horizontal, Vertical };
 
 pub trait Generator {
     fn generate(words: Vec<&str>, opts: (usize, GridIndex, GridIndex)) -> Vec<Crossword>;

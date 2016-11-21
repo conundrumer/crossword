@@ -1,13 +1,13 @@
 use std::fmt::{Display, Formatter, Result};
 
-use placement::{ Position, GridIndex, BoundingBox, Orientation };
-use placement::Orientation::{ Horizontal, Vertical };
+use placement::{ Position, GridIndex, BoundingBox, Direction };
+use placement::Direction::{ Horizontal, Vertical };
 
 #[derive(Debug, Copy, Clone, PartialEq)]
 enum GridCell {
     Empty,
-    Block(Option<Orientation>),
-    Letter(char, Option<Orientation>),
+    Block(Option<Direction>),
+    Letter(char, Option<Direction>),
     Collision
 }
 use self::GridCell::*;
@@ -40,7 +40,7 @@ impl Grid {
         let (row, col) = (self.row(pos.row), self.col(pos.col));
         self.set_cell(row, col, Block(None))
     }
-    pub fn set_char(&mut self, pos: Position, orient: Orientation, c: char) -> bool {
+    pub fn set_char(&mut self, pos: Position, orient: Direction, c: char) -> bool {
         let (row, col) = (self.row(pos.row), self.col(pos.col));
         match orient {
             Horizontal => {

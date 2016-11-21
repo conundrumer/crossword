@@ -1,11 +1,11 @@
-use placement::{ Position, GridIndex, Orientation };
-use placement::Orientation::{ Horizontal, Vertical };
+use placement::{ Position, GridIndex, Direction };
+use placement::Direction::{ Horizontal, Vertical };
 
 #[derive(Debug, Clone)]
 pub struct Word<'a> {
     pub letters: &'a str,
     pub pos: Position,
-    pub orientation: Orientation
+    pub orientation: Direction
 }
 impl<'a> Word<'a> {
     pub fn chars(&self) -> Vec<(char, Position)> {

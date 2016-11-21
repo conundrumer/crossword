@@ -4,14 +4,14 @@ pub type GridIndex = i32;
 pub const MAX_INDEX: GridIndex = std::i32::MAX;
 pub const MIN_INDEX: GridIndex = std::i32::MIN;
 
-#[derive(Debug, Copy, Clone)]
+#[derive(Debug, Copy, Clone, PartialEq, Eq)]
 pub struct Position {
     pub row: GridIndex,
     pub col: GridIndex
 }
 
 #[derive(Debug, Copy, Clone, PartialEq)]
-pub enum Orientation {
+pub enum Direction {
     Horizontal,
     Vertical
 }

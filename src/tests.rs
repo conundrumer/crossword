@@ -1,5 +1,5 @@
 use placement::{ Position };
-use placement::Orientation::{ Horizontal, Vertical };
+use placement::Direction::{ Horizontal, Vertical };
 use word::{ Word };
 use crossword::{ Crossword };
 
