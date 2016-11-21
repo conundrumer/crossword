@@ -186,7 +186,7 @@ fn is_valid_diagonal() {
 use generate::Generator;
 #[test]
 fn test_generate () {
-    let opts = (1, 5, 5);
+    let opts = (1, 5);
     let crosswords = Generator::generate(vec![
         "ton",
         "tok",

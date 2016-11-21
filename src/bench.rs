@@ -9,7 +9,7 @@ fn generate(b: &mut test::Bencher) {
         "took",
         "noob",
         "koob"
-    ], (1, 5, 5)))
+    ], (1, 5)))
 }
 
 /*
@@ -38,5 +38,5 @@ fn generate_huge(b: &mut test::Bencher) {
         "vaporwave",
         "crossword",
         "unicode"
-    ], (1, 5, 5)))
+    ], (1, 5)))
 }

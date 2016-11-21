@@ -8,7 +8,7 @@ use placement::Direction::{ Horizontal, Vertical };
 pub struct Generator;
 impl Generator {
     // simple generator
-    pub fn generate(init_words: Vec<&str>, _opts: (usize, GridIndex, GridIndex)) -> Vec<Crossword> {
+    pub fn generate(init_words: Vec<&str>, (_n, _width): (usize, GridIndex)) -> Vec<Crossword> {
         if init_words.len() == 0 {
             return vec![];
         }
