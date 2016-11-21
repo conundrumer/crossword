@@ -3,10 +3,22 @@ use placement::{ BoundingBox, GridIndex, MAX_INDEX, MIN_INDEX };
 use grid::{ Grid };
 
 #[derive(Debug)]
-pub struct Crossword {
-    pub words: Vec<Word>
+pub struct Crossword<'a> {
+    pub words: Vec<Word<'a>>
 }
-impl Crossword {
+impl<'a> Clone for Crossword<'a> {
+    fn clone(&self) -> Self {
+        Crossword {
+            words: self.words.clone()
+        }
+    }
+}
+impl<'a> Crossword<'a> {
+    pub fn add(&self, word: Word<'a>) -> Crossword<'a> {
+        let mut next_self = self.clone();
+        next_self.words.push(word);
+        next_self
+    }
     pub fn bounding_box(&self) -> BoundingBox {
         use std::cmp::{min, max};
         let (top, left, bottom, right) = self.words.iter().fold(
@@ -55,7 +67,7 @@ impl Crossword {
     }
 }
 use std::fmt::{Display, Formatter, Result};
-impl Display for Crossword {
+impl<'a> Display for Crossword<'a> {
     fn fmt(&self, f: &mut Formatter) -> Result {
         write!(f, "{}", self.to_grid())
     }

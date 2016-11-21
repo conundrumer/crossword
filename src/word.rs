@@ -1,13 +1,16 @@
 use placement::{ Position, GridIndex, Orientation };
 use placement::Orientation::{ Horizontal, Vertical };
 
-#[derive(Debug)]
-pub struct Word {
-    pub letters: &'static str,
+#[derive(Debug, Clone)]
+pub struct Word<'a> {
+    pub letters: &'a str,
     pub pos: Position,
     pub orientation: Orientation
 }
-impl Word {
+impl<'a> Word<'a> {
+    pub fn chars(&self) -> Vec<(char, Position)> {
+        self.letters.chars().enumerate().map(|(i, c)| (c, self.letter_pos(i as GridIndex))).collect()
+    }
     pub fn len(&self) -> GridIndex {
         self.letters.len() as GridIndex
     }

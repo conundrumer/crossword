@@ -68,11 +68,15 @@ impl Grid {
             (Block(_), Block(_)) => {
                 Block(None)
             },
-            (Letter(c, Some(o1)), Block(Some(o2))) | (Block(Some(o2)), Letter(c, Some(o1))) if o1 != o2 => {
-                Letter(c, None)
-            },
             (Letter(c1, Some(o1)), Letter(c2, Some(o2))) if c1 == c2 && o1 != o2 => {
                 Letter(c1, None)
+            },
+            (Letter(c, opt_o1 @ _), Block(opt_o2 @ _)) | (Block(opt_o2 @ _), Letter(c, opt_o1 @ _)) => {
+                match (opt_o1, opt_o2) {
+                    (Some(o1), Some(o2)) if o1 != o2 => Letter(c, Some(o1)),
+                    (None, _) => Letter(c, None),
+                    _ => Collision
+                }
             },
             (_, _) => match cell {
                 Block(_) | Letter(_, Some(_)) => Collision,
