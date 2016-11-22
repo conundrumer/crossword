@@ -1,9 +1,11 @@
+#![feature(conservative_impl_trait)]
 #![allow(unused_features)]
 #![feature(test)]
 #[cfg(test)]
 extern crate test;
 
 mod placement;
+mod word_placements;
 mod grid;
 mod crossword;
 mod generate;

@@ -1,11 +1,11 @@
 use placement::{ Position, BoundingBox, GridIndex, MAX_INDEX, MIN_INDEX };
-use placement::Direction::Horizontal;
 use grid::{ Grid };
+use word_placements::WordPlacements;
 
 #[derive(Debug)]
 pub struct Crossword<'a> {
     pub word_list: Vec<&'a str>,
-    pub positions: Vec<Option<Position>>
+    pub positions: WordPlacements
 }
 impl<'a> Clone for Crossword<'a> {
     fn clone(&self) -> Self {
@@ -23,41 +23,35 @@ impl<'a> PartialEq for Crossword<'a> {
 impl<'a> Eq for Crossword<'a> {}
 impl<'a> Crossword<'a> {
     pub fn new(word_list: Vec<&'a str>) -> Crossword<'a> {
-        let mut positions = vec![None; word_list.len()];
-        positions[0] = Some(Position { row: 0, col: 0, dir: Horizontal });
         Crossword {
             word_list: word_list.clone(),
-            positions: positions
+            positions: WordPlacements::new(word_list.len())
         }
     }
     pub fn set(&self, word_index: usize, pos: Position) -> Crossword<'a> {
-        let mut next_self = self.clone();
-        next_self.positions[word_index] = Some(pos);
-        next_self
+        Crossword {
+            word_list: self.word_list.clone(),
+            positions: self.positions.set(word_index, pos)
+        }
     }
     pub fn bounding_box(&self) -> BoundingBox {
         use std::cmp::{min, max};
-        let (top, left, bottom, right) = self.word_positions().iter().fold(
+        let (top, left, bottom, right) = self.positions.index_positions().fold(
             (MAX_INDEX, MAX_INDEX, MIN_INDEX, MIN_INDEX),
-            |(top, left, bottom, right), &(word, pos)| {
+            |(top, left, bottom, right), (word_index, pos)| {
+                let word = self.word_list[word_index];
                 let last_pos = pos.letter_pos((word.len() - 1) as GridIndex);
                 (min(top, pos.row), min(left, pos.col), max(bottom, last_pos.row), max(right, last_pos.col))
             }
         );
         BoundingBox::new(top, left, bottom, right)
     }
-    pub fn word_positions(&self) -> Vec<(&'a str, Position)> {
-        self.positions.iter().enumerate()
-            .flat_map(|(word_index, opt_pos)|
-                opt_pos.map(|pos| (self.word_list[word_index], pos))
-            )
-            .collect()
-    }
 
     fn to_valid_grid(&self, validate: bool) -> Option<Grid> {
         let bb = self.bounding_box();
         let mut grid = Grid::new(bb);
-        for (word, pos) in self.word_positions() {
+        for (word_index, pos) in self.positions.index_positions() {
+            let word = self.word_list[word_index];
             // TODO: use an extended array/iter lib to append things more cleanly
             let startpoint = Some((pos.letter_pos(-1), None)).into_iter();
             let endpoint = Some((pos.letter_pos(word.len() as GridIndex), None)).into_iter();
@@ -101,14 +95,19 @@ mod tests {
     use super::*;
     use placement::{ Position, BoundingBox };
     use placement::Direction::{ Horizontal, Vertical };
+    use word_placements::WordPlacements;
 
     type WordPosition = (&'static str, Position);
 
     fn make_crossword(word_positions: Vec<WordPosition>) -> Crossword {
         let (word_list, positions): (Vec<_>, Vec<_>) = word_positions.iter().cloned().unzip();
+        let n = positions.len();
         Crossword {
             word_list: word_list,
-            positions: positions.into_iter().map(|x| Some(x)).collect()
+            positions: positions.into_iter().enumerate().fold(
+                WordPlacements::new(n),
+                |wp, (i, x)| wp.set(i, x)
+            )
         }
     }
 

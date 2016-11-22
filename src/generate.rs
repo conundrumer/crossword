@@ -38,8 +38,9 @@ fn crosswords_from_word_vec<'a> (crossword: Crossword<'a>, words: Vec<Option<&'a
         .collect()
 }
 fn crosswords_from_word<'a> (crossword: Crossword<'a>, new_word: &'a str, new_word_index: usize) -> Vec<Crossword<'a>> {
-    crossword.word_positions().iter()
-    .flat_map(|&(word, word_pos)| {
+    crossword.positions.index_positions()
+    .flat_map(|(word_index, word_pos)| {
+        let word = crossword.word_list[word_index];
         word.chars().enumerate().flat_map(|(letter_index, c1)| {
             let pos = word_pos.letter_pos(letter_index as GridIndex);
             new_word.chars().enumerate().flat_map(|(i, c2)| {
@@ -70,14 +71,19 @@ mod tests {
     use placement::{ Position };
     use placement::Direction::{ Horizontal, Vertical };
     use crossword::{ Crossword };
+    use word_placements::WordPlacements;
 
     type WordPosition = (&'static str, Position);
 
     fn make_crossword(word_positions: Vec<WordPosition>) -> Crossword {
         let (word_list, positions): (Vec<_>, Vec<_>) = word_positions.iter().cloned().unzip();
+        let n = positions.len();
         Crossword {
             word_list: word_list,
-            positions: positions.into_iter().map(|x| Some(x)).collect()
+            positions: positions.into_iter().enumerate().fold(
+                WordPlacements::new(n),
+                |wp, (i, x)| wp.set(i, x)
+            )
         }
     }
 
