@@ -12,6 +12,17 @@ fn generate(b: &mut test::Bencher) {
     ], (1, 5)))
 }
 
+#[bench]
+fn generate_medium(b: &mut test::Bencher) {
+    b.iter(|| Generator::generate(vec![
+        "scent",
+        "scarf",
+        "fleet",
+        "tenet",
+        "eerie"
+    ], (1, 5)))
+}
+
 /*
 　　　　　　ｕ
 　　　　　　ｎ
