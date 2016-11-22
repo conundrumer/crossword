@@ -62,3 +62,55 @@ fn crosswords_from_word<'a> (crossword: Crossword<'a>, new_word: &'a str, new_wo
     })
     .collect()
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    use placement::{ Position };
+    use placement::Direction::{ Horizontal, Vertical };
+    use crossword::{ Crossword };
+
+    type WordPosition = (&'static str, Position);
+
+    fn make_crossword(word_positions: Vec<WordPosition>) -> Crossword {
+        let (word_list, positions): (Vec<_>, Vec<_>) = word_positions.iter().cloned().unzip();
+        Crossword {
+            word_list: word_list,
+            positions: positions.into_iter().map(|x| Some(x)).collect()
+        }
+    }
+
+    #[test]
+    fn test_generate () {
+        let opts = (1, 5);
+        let crosswords = Generator::generate(vec![
+            "ton",
+            "tok",
+            "nob",
+            "kob"
+        ], opts);
+        let expected = make_crossword(vec![
+            ("ton", Position { row: 0, col: 0, dir: Horizontal }),
+            ("tok", Position { row: 0, col: 0, dir: Vertical }),
+            ("nob", Position { row: 0, col: 2, dir: Vertical }),
+            ("kob", Position { row: 2, col: 0, dir: Horizontal })
+        ]);
+        assert_eq!(1, crosswords.len());
+
+        assert_eq!(expected, crosswords[0]);
+
+        let crosswords = Generator::generate(vec![
+            "toon",
+            "took",
+            "noob",
+            "koob"
+        ], opts);
+
+        // for crossword in &crosswords {
+        //     println!("{}", crossword);
+        // }
+        assert_eq!(22, crosswords.len());
+    }
+
+}
