@@ -1,6 +1,5 @@
 use std::collections::HashMap;
 
-use word::{ WordPosition };
 use crossword::{ Crossword };
 use placement::{ Position, GridIndex };
 use placement::Direction::{ Horizontal, Vertical };
@@ -8,54 +7,51 @@ use placement::Direction::{ Horizontal, Vertical };
 pub struct Generator;
 impl Generator {
     // simple generator
-    pub fn generate(init_words: Vec<&str>, (_n, _width): (usize, GridIndex)) -> Vec<Crossword> {
-        if init_words.len() == 0 {
+    pub fn generate(words: Vec<&str>, (_n, _width): (usize, GridIndex)) -> Vec<Crossword> {
+        if words.len() == 0 {
             return vec![];
         }
-        let mut cloned_words = init_words.clone();
-        let word = cloned_words.remove(0);
-        let first_word_pos = WordPosition {
-            word: word,
-            pos: Position { row: 0, col: 0, dir: Horizontal }
-        };
-        let crosswords = crosswords_from_word_vec(Crossword { words: vec![first_word_pos] }, cloned_words);
+        let mut remaining_words: Vec<_> = words.clone().into_iter().map(|x| Some(x)).collect();
+        remaining_words[0] = None;
+        let crosswords = crosswords_from_word_vec(Crossword::new(words.clone()), remaining_words);
         // remove duplicates using hashmap and string equality
         let crosswords: HashMap<_, _> = crosswords.into_iter().map(|c| (format!("{}", c), c)).collect();
         crosswords.into_iter().map(|(_, c)| c).collect()
     }
 }
 
-fn crosswords_from_word_vec<'a> (crossword: Crossword<'a>, words: Vec<&'a str>) -> Vec<Crossword<'a>> {
-    if words.len() == 0 {
+fn crosswords_from_word_vec<'a> (crossword: Crossword<'a>, words: Vec<Option<&'a str>>) -> Vec<Crossword<'a>> {
+    let remaining_words: Vec<_> = words.clone().into_iter().flat_map(|x| x).collect();
+    if remaining_words.len() == 0 {
         return vec![crossword];
     }
     let cloned_words = words.clone();
     words.into_iter().enumerate()
-        .flat_map(move |(i, word)| {
+        .flat_map(|(word_index, opt_word)| opt_word.map(|word| (word_index, word)))
+        .flat_map(move |(word_index, word)| {
             let mut next_words = cloned_words.clone();
-            next_words.remove(i);
-            crosswords_from_word(crossword.clone(), word)
+            next_words[word_index] = None;
+            crosswords_from_word(crossword.clone(), word, word_index)
                 .into_iter()
                 .flat_map(move |crossword_from_word| crosswords_from_word_vec(crossword_from_word.clone(), next_words.clone()))
         })
         .collect()
 }
-fn crosswords_from_word<'a> (crossword: Crossword<'a>, new_word: &'a str) -> Vec<Crossword<'a>> {
-    crossword.words.clone().into_iter().flat_map(|word_pos| {
-        word_pos.chars().into_iter().flat_map(|(c1, pos)| {
+fn crosswords_from_word<'a> (crossword: Crossword<'a>, new_word: &'a str, new_word_index: usize) -> Vec<Crossword<'a>> {
+    crossword.word_positions().iter()
+    .flat_map(|&(word, word_pos)| {
+        word.chars().enumerate().flat_map(|(letter_index, c1)| {
+            let pos = word_pos.letter_pos(letter_index as GridIndex);
             new_word.chars().enumerate().flat_map(|(i, c2)| {
                 let i = i as GridIndex;
                 if c1 != c2 {
                     return None
                 }
-                let (row, col, dir) = match word_pos.pos.dir {
+                let (row, col, dir) = match word_pos.dir {
                     Horizontal => (pos.row - i, pos.col, Vertical),
-                    Vertical => (pos.row, word_pos.pos.col - i, Horizontal)
+                    Vertical => (pos.row, pos.col - i, Horizontal)
                 };
-                let next_crossword = crossword.add(WordPosition {
-                    word: new_word,
-                    pos: Position { row: row, col: col, dir: dir }
-                });
+                let next_crossword = crossword.set(new_word_index, Position { row: row, col: col, dir: dir });
                 if next_crossword.is_valid() {
                     Some(next_crossword)
                 } else {

@@ -1,7 +1,17 @@
 use placement::{ Position, BoundingBox };
 use placement::Direction::{ Horizontal, Vertical };
-use word::{ WordPosition };
+// use word::{ WordPosition };
 use crossword::{ Crossword };
+
+type WordPosition = (&'static str, Position);
+
+fn make_crossword(word_positions: Vec<WordPosition>) -> Crossword {
+    let (word_list, positions): (Vec<_>, Vec<_>) = word_positions.iter().cloned().unzip();
+    Crossword {
+        word_list: word_list,
+        positions: positions.into_iter().map(|x| Some(x)).collect()
+    }
+}
 
 //   0 1 2 3 4
 // 0
@@ -9,11 +19,8 @@ use crossword::{ Crossword };
 // 2
 // 3 h e l l o
 // 4
-fn make_hello() -> WordPosition<'static> {
-    WordPosition {
-        word: "hello",
-        pos: Position { row: 3, col: 0, dir: Horizontal }
-    }
+fn make_hello() -> WordPosition {
+    ("hello", Position { row: 3, col: 0, dir: Horizontal })
 }
 
 //   0 1 2 3 4
@@ -22,11 +29,8 @@ fn make_hello() -> WordPosition<'static> {
 // 2     r
 // 3     l
 // 4     d
-fn make_world() -> WordPosition<'static> {
-    WordPosition {
-        word: "world",
-        pos: Position { row: 0, col: 2, dir: Vertical }
-    }
+fn make_world() -> WordPosition {
+    ("world", Position { row: 0, col: 2, dir: Vertical })
 }
 
 //   0 1 2 3 4
@@ -36,18 +40,7 @@ fn make_world() -> WordPosition<'static> {
 // 3 h e l l o
 // 4     d
 fn make_hello_world() -> Crossword<'static> {
-    Crossword {
-        words: vec![make_hello(), make_world()]
-    }
-}
-
-#[test]
-fn last_pos() {
-    let hello = make_hello();
-    assert_eq!(Position { row: 3, col: 4, dir: Horizontal }, hello.last_pos());
-
-    let world = make_world();
-    assert_eq!(Position { row: 4, col: 2, dir: Vertical }, world.last_pos());
+    make_crossword(vec![make_hello(), make_world()])
 }
 
 #[test]
@@ -80,11 +73,8 @@ fn is_valid() {
 // 2   n
 // 3   a
 // 4   g
-fn make_nag() -> WordPosition<'static> {
-    WordPosition {
-        word: "nag",
-        pos: Position { row: 2, col: 1, dir: Vertical }
-    }
+fn make_nag() -> WordPosition {
+    ("nag", Position { row: 2, col: 1, dir: Vertical })
 }
 
 //   0 1 2 3 4
@@ -93,11 +83,8 @@ fn make_nag() -> WordPosition<'static> {
 // 2       e
 // 3
 // 4
-fn make_bye() -> WordPosition<'static> {
-    WordPosition {
-        word: "bye",
-        pos: Position { row: 0, col: 3, dir: Vertical }
-    }
+fn make_bye() -> WordPosition {
+    ("bye", Position { row: 0, col: 3, dir: Vertical })
 }
 
 //   0 1 2 3 4
@@ -106,11 +93,8 @@ fn make_bye() -> WordPosition<'static> {
 // 2     n o
 // 3
 // 4
-fn make_no() -> WordPosition<'static> {
-    WordPosition {
-        word: "no",
-        pos: Position { row: 2, col: 2, dir: Horizontal }
-    }
+fn make_no() -> WordPosition {
+    ("no", Position { row: 2, col: 2, dir: Horizontal })
 }
 
 //   0 1 2 3 4
@@ -119,11 +103,8 @@ fn make_no() -> WordPosition<'static> {
 // 2
 // 3 h e y
 // 4
-fn make_hey() -> WordPosition<'static> {
-    WordPosition {
-        word: "hey",
-        pos: Position { row: 3, col: 0, dir: Horizontal }
-    }
+fn make_hey() -> WordPosition {
+    ("hey", Position { row: 3, col: 0, dir: Horizontal })
 }
 
 #[test]
@@ -134,9 +115,7 @@ fn is_invalid() {
     // 2   n
     // 3 h æ l l o
     // 4   g
-    let invalid_crossword = Crossword {
-        words: vec![make_hello(), make_nag()]
-    };
+    let invalid_crossword = make_crossword(vec![make_hello(), make_nag()]);
     assert!(!invalid_crossword.is_valid());
 }
 
@@ -149,9 +128,7 @@ fn is_invalid_adjacent() {
     // 2     n o
     // 3 h e l l o
     // 4
-    let adjacent_crossword = Crossword {
-        words: vec![make_hello(), make_no()]
-    };
+    let adjacent_crossword = make_crossword(vec![make_hello(), make_no()]);
     assert!(!adjacent_crossword.is_valid());
 }
 
@@ -163,9 +140,7 @@ fn is_invalid_touching() {
     // 2       e
     // 3 h e l l o
     // 4
-    let touching_crossword = Crossword {
-        words: vec![make_hello(), make_bye()]
-    };
+    let touching_crossword = make_crossword(vec![make_hello(), make_bye()]);
     assert!(!touching_crossword.is_valid());
 }
 
@@ -177,9 +152,7 @@ fn is_valid_diagonal() {
     // 2       e
     // 3 h e y
     // 4
-    let diagonal_crossword = Crossword {
-        words: vec![make_hey(), make_bye()]
-    };
+    let diagonal_crossword = make_crossword(vec![make_hey(), make_bye()]);
     assert!(diagonal_crossword.is_valid());
 }
 
@@ -193,16 +166,15 @@ fn test_generate () {
         "nob",
         "kob"
     ], opts);
-    let expected = Crossword {
-        words: vec![
-            WordPosition { word: "ton", pos: Position { row: 0, col: 0, dir: Horizontal } },
-            WordPosition { word: "nob", pos: Position { row: 0, col: 2, dir: Vertical } },
-            WordPosition { word: "kob", pos: Position { row: 2, col: 0, dir: Horizontal } },
-            WordPosition { word: "tok", pos: Position { row: 0, col: 0, dir: Vertical } }
-        ]
-    };
+    let expected = make_crossword(vec![
+        ("ton", Position { row: 0, col: 0, dir: Horizontal }),
+        ("tok", Position { row: 0, col: 0, dir: Vertical }),
+        ("nob", Position { row: 0, col: 2, dir: Vertical }),
+        ("kob", Position { row: 2, col: 0, dir: Horizontal })
+    ]);
     assert_eq!(1, crosswords.len());
-    assert_eq!(format!("{}", crosswords[0]), format!("{}", expected));
+
+    assert_eq!(expected, crosswords[0]);
 
     let crosswords = Generator::generate(vec![
         "toon",
@@ -210,5 +182,9 @@ fn test_generate () {
         "noob",
         "koob"
     ], opts);
+
+    // for crossword in &crosswords {
+    //     println!("{}", crossword);
+    // }
     assert_eq!(22, crosswords.len());
 }
