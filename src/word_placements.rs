@@ -2,7 +2,7 @@ use placement::Position;
 use placement::Direction::Horizontal;
 
 #[derive(Debug, Eq, PartialEq, Clone, Hash)]
-pub struct WordPlacements(Vec<Option<Position>>);
+pub struct WordPlacements(pub Vec<Option<Position>>);
 
 impl WordPlacements {
     pub fn new(n: usize) -> WordPlacements {
