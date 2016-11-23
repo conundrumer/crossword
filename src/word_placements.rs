@@ -53,4 +53,14 @@ mod tests {
         let vec: Vec<_> = iter.collect();
         assert_eq!(vec![(0, Position { row: 0, col: 0, dir: Horizontal }), (2, pos)], vec);
     }
+
+    #[test]
+    fn hash() {
+        use std::collections::HashSet;
+        let wp1 = WordPlacements(vec![Some(Position { row: 0, col: 0, dir: Horizontal })]);
+        let wp2 = WordPlacements(vec![Some(Position { row: 0, col: 0, dir: Horizontal })]);
+        let mut set = HashSet::new();
+        set.insert(wp1.clone());
+        assert!(set.contains(&wp2));
+    }
 }
