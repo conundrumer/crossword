@@ -12,21 +12,28 @@ pub struct Generator<'a> {
     seen: RefCell<HashSet<WordPlacements>>
 }
 impl<'a> Generator<'a> {
+    pub fn new(words: Vec<&'a str>) -> Generator<'a> {
+        Generator {
+            word_list: words.clone(),
+            seen: RefCell::new(HashSet::new())
+        }
+    }
     // simple generator
     pub fn generate(words: Vec<&'a str>, (_n, _width): (usize, GridIndex)) -> Vec<Crossword> {
         if words.len() == 0 {
             return vec![];
         }
-        let mut remaining_words: Vec<_> = words.clone().into_iter().map(|x| Some(x)).collect();
+        let gen = Generator::new(words);
+
+        let v = gen.iter().collect();
+        v
+    }
+
+    pub fn iter<'b>(&'b self) -> Box<Iterator<Item=Crossword<'a>> + 'b> {
+        let mut remaining_words: Vec<_> = self.word_list.clone().into_iter().map(|x| Some(x)).collect();
         remaining_words[0] = None;
 
-        let gen = Generator {
-            word_list: words.clone(),
-            seen: RefCell::new(HashSet::new())
-        };
-
-        let v = gen.from_word_vec(Crossword::new(words.clone()), Rc::new(remaining_words)).collect();
-        v
+        self.from_word_vec(Crossword::new(self.word_list.clone()), Rc::new(remaining_words))
     }
 
     fn from_word_vec<'b>(&'b self, crossword: Crossword<'a>, words: Rc<Vec<Option<&'a str>>>) -> Box<Iterator<Item=Crossword<'a>> + 'b> {
@@ -55,7 +62,6 @@ impl<'a> Generator<'a> {
                 let self_cell = self_cell.clone();
                 crossword2.positions.0.clone().into_iter().enumerate().flat_map(|(word_index, opt_pos)| opt_pos.map(|pos| (word_index, pos)))
                     .map(move |(word_index, word_pos)| {
-                        let self_cell = self_cell.clone();
                         let word = self_cell.word_list[word_index];
                         (word, word_pos)
                     })
@@ -84,8 +90,7 @@ impl<'a> Generator<'a> {
             })
             .flat_map(move |((new_word_index, next_words), next_pos)| {
                 let next_crossword = crossword.set(new_word_index, next_pos);
-                let self_cell = self_cell2.clone();
-                let mut seen = &mut self_cell.seen.borrow_mut();
+                let mut seen = &mut self_cell2.seen.borrow_mut();
                 if seen.contains(&next_crossword.positions) {
                     return None
                 }
@@ -160,10 +165,35 @@ mod tests {
             "koob"
         ], opts);
 
-        // for crossword in &crosswords {
-        //     println!("{}", crossword);
-        // }
         assert_eq!(22, crosswords.len());
     }
+    #[test]
+    fn test_generate_iter () {
+        let gen = Generator::new(vec![
+            "ton",
+            "tok",
+            "nob",
+            "kob"
+        ]);
+        let crosswords: Vec<_> = gen.iter().collect();
+        let expected = make_crossword(vec![
+            ("ton", Position { row: 0, col: 0, dir: Horizontal }),
+            ("tok", Position { row: 0, col: 0, dir: Vertical }),
+            ("nob", Position { row: 0, col: 2, dir: Vertical }),
+            ("kob", Position { row: 2, col: 0, dir: Horizontal })
+        ]);
+        assert_eq!(1, crosswords.len());
 
+        assert_eq!(expected, crosswords[0]);
+
+        let gen = Generator::new(vec![
+            "toon",
+            "took",
+            "noob",
+            "koob"
+        ]);
+        let crosswords: Vec<_> = gen.iter().collect();
+
+        assert_eq!(22, crosswords.len());
+    }
 }
