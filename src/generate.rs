@@ -9,10 +9,11 @@ use word_placements::WordPlacements;
 
 type SeenWordPlacements = Rc<RefCell<HashSet<WordPlacements>>>;
 
-pub struct Generator {
+pub struct Generator<'a> {
+    word_list: Vec<&'a str>,
     seen: HashSet<WordPlacements>
 }
-impl Generator {
+impl<'a> Generator<'a> {
     // simple generator
     pub fn generate(words: Vec<&str>, (_n, _width): (usize, GridIndex)) -> Vec<Crossword> {
         if words.len() == 0 {
@@ -21,73 +22,80 @@ impl Generator {
         let mut remaining_words: Vec<_> = words.clone().into_iter().map(|x| Some(x)).collect();
         remaining_words[0] = None;
 
-        let mut gen = Generator { seen: HashSet::new() };
+        let mut gen = Generator {
+            word_list: words.clone(),
+            seen: HashSet::new()
+        };
 
-        gen.from_word_vec(Crossword::new(words.clone()), remaining_words)
+        gen.from_word_vec(Crossword::new(words.clone()), &remaining_words)
     }
 
-    fn from_word_vec<'a>(&mut self, crossword: Crossword<'a>, words: Vec<Option<&'a str>>) -> Vec<Crossword<'a>> {
+    fn from_word_vec(&mut self, crossword: Crossword<'a>, words: &Vec<Option<&'a str>>) -> Vec<Crossword<'a>> {
         if words.iter().all(|opt_word| opt_word.is_none()) {
             return vec![crossword];
         }
         let cloned_words = words.clone();
         let self_cell = RefCell::new(self);
         cloned_words.into_iter().enumerate()
-            .flat_map(|(word_index, opt_word)| {
-                opt_word.map(|word| {
-                    (word_index, word)
+            .flat_map(|(new_word_index, opt_word)| {
+                opt_word.map(|new_word| {
+                    (new_word_index, new_word)
                 })
             })
-            .flat_map(|(word_index, word)| {
+            .map(|(new_word_index, new_word)| {
                 let mut next_words = words.clone();
-                next_words[word_index] = None;
-                self_cell.borrow_mut().from_word(crossword.clone(), word, word_index).into_iter()
-                    .map(move |crossword_from_word| {
-                        (crossword_from_word, next_words.clone())
+                next_words[new_word_index] = None;
+                let next_words = Rc::new(next_words);
+                (new_word, new_word_index, next_words)
+            })
+            .flat_map(|w| {
+                crossword.positions.index_positions()
+                    .map(|(word_index, word_pos)| {
+                        let word = self_cell.borrow().word_list[word_index];
+                        (word, word_pos)
+                    })
+                    .map(move |(word, word_pos)| {
+                        (w.clone(), (word, word_pos))
                     })
             })
-            .flat_map(|(crossword_from_word, next_words)| {
-                self_cell.borrow_mut().from_word_vec(crossword_from_word, next_words).into_iter()
-            })
-            .collect()
-    }
-
-    fn from_word<'a> (&mut self, crossword: Crossword<'a>, new_word: &'a str, new_word_index: usize) -> Vec<Crossword<'a>> {
-        crossword.positions.index_positions()
-            .flat_map(|(word_index, word_pos)| {
-                let word = crossword.word_list[word_index];
+            .flat_map(|(w, (word, word_pos))| {
                 word.chars().enumerate()
                     .map(move |(i1, c1)| {
                         let pos = word_pos.letter_pos(i1 as GridIndex);
-                        (pos, c1)
+                        (w.clone(), (pos, c1))
                     })
             })
-            .flat_map(|(pos, c1)| {
+            .flat_map(|((new_word, new_word_index, next_words), char1)| {
                 new_word.chars().enumerate().map(move |(i2, c2)| {
-                    (pos, c1, i2, c2)
+                    ((new_word_index, next_words.clone()), char1, (i2, c2))
                 })
             })
-            .flat_map(|(pos, c1, i2, c2)| {
+            .flat_map(|(w, (pos, c1), (i2, c2))| {
                 if c1 != c2 {
                     return None
                 }
                 let next_pos = next_pos_from_offset(pos, i2 as GridIndex);
-                Some(next_pos)
+                Some((w, next_pos))
             })
-            .flat_map(|next_pos| {
+            .flat_map(|((new_word_index, next_words), next_pos)| {
                 let next_crossword = crossword.set(new_word_index, next_pos);
-                let seen = &mut self.seen;
+                let mut seen = &mut self_cell.borrow_mut().seen;
                 if seen.contains(&next_crossword.positions) {
                     return None
                 }
+
                 // is_valid is very expensive atm so it's cheaper to first check if it's seen
                 seen.insert(next_crossword.positions.clone());
                 if next_crossword.is_valid() {
-                    Some(next_crossword)
+                    Some((next_crossword, next_words))
                 } else {
                     None
                 }
-            }).collect()
+            })
+            .flat_map(|(crossword_from_word, next_words)| {
+                self_cell.borrow_mut().from_word_vec(crossword_from_word, &next_words).into_iter()
+            })
+            .collect()
     }
 }
 fn next_pos_from_offset(pos: Position, i: GridIndex) -> Position {
