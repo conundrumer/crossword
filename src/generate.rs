@@ -31,15 +31,23 @@ impl Generator {
             return vec![crossword];
         }
         let cloned_words = words.clone();
+        let self_cell = RefCell::new(self);
         cloned_words.into_iter().enumerate()
-            .flat_map(|(word_index, opt_word)| opt_word.map(|word| (word_index, word)))
-            .flat_map(move |(word_index, word)| {
+            .flat_map(|(word_index, opt_word)| {
+                opt_word.map(|word| {
+                    (word_index, word)
+                })
+            })
+            .flat_map(|(word_index, word)| {
                 let mut next_words = words.clone();
                 next_words[word_index] = None;
-                self.from_word(crossword.clone(), word, word_index)
-                    .into_iter()
-                    .flat_map(|crossword_from_word| self.from_word_vec(crossword_from_word, next_words.clone()))
-                    .collect::<Vec<_>>().into_iter()
+                self_cell.borrow_mut().from_word(crossword.clone(), word, word_index).into_iter()
+                    .map(move |crossword_from_word| {
+                        (crossword_from_word, next_words.clone())
+                    })
+            })
+            .flat_map(|(crossword_from_word, next_words)| {
+                self_cell.borrow_mut().from_word_vec(crossword_from_word, next_words).into_iter()
             })
             .collect()
     }
@@ -48,27 +56,37 @@ impl Generator {
         crossword.positions.index_positions()
             .flat_map(|(word_index, word_pos)| {
                 let word = crossword.word_list[word_index];
-                word.chars().enumerate().flat_map(|(letter_index, c1)| {
-                    let pos = word_pos.letter_pos(letter_index as GridIndex);
-                    new_word.chars().enumerate().flat_map(|(i, c2)| {
-                        if c1 != c2 {
-                            return None
-                        }
-                        let next_pos = next_pos_from_offset(pos, i as GridIndex);
-                        let next_crossword = crossword.set(new_word_index, next_pos);
-                        let seen = &mut self.seen;
-                        if seen.contains(&next_crossword.positions) {
-                            return None
-                        }
-                        // is_valid is very expensive atm so it's cheaper to first check if it's seen
-                        seen.insert(next_crossword.positions.clone());
-                        if next_crossword.is_valid() {
-                            Some(next_crossword)
-                        } else {
-                            None
-                        }
-                    }).collect::<Vec<_>>().into_iter()
-                }).collect::<Vec<_>>().into_iter()
+                word.chars().enumerate()
+                    .map(move |(i1, c1)| {
+                        let pos = word_pos.letter_pos(i1 as GridIndex);
+                        (pos, c1)
+                    })
+            })
+            .flat_map(|(pos, c1)| {
+                new_word.chars().enumerate().map(move |(i2, c2)| {
+                    (pos, c1, i2, c2)
+                })
+            })
+            .flat_map(|(pos, c1, i2, c2)| {
+                if c1 != c2 {
+                    return None
+                }
+                let next_pos = next_pos_from_offset(pos, i2 as GridIndex);
+                Some(next_pos)
+            })
+            .flat_map(|next_pos| {
+                let next_crossword = crossword.set(new_word_index, next_pos);
+                let seen = &mut self.seen;
+                if seen.contains(&next_crossword.positions) {
+                    return None
+                }
+                // is_valid is very expensive atm so it's cheaper to first check if it's seen
+                seen.insert(next_crossword.positions.clone());
+                if next_crossword.is_valid() {
+                    Some(next_crossword)
+                } else {
+                    None
+                }
             }).collect()
     }
 }
