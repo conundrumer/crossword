@@ -50,4 +50,7 @@ impl BoundingBox {
     pub fn height(&self) -> GridIndex {
         self.bottom - self.top + 1
     }
+    pub fn area(&self) -> GridIndex {
+        self.width() * self.height()
+    }
 }

@@ -1,29 +1,32 @@
 use std::collections::HashSet;
+use std::collections::BinaryHeap;
 use std::cell::RefCell;
 use std::rc::Rc;
 
 use crossword::{ Crossword };
-use placement::{ Position, GridIndex };
+use placement::{ Position, GridIndex, MAX_INDEX };
 use placement::Direction::{ Horizontal, Vertical };
 use word_placements::WordPlacements;
 
 pub struct Generator<'a> {
     word_list: Vec<&'a str>,
-    seen: RefCell<HashSet<WordPlacements>>
+    seen: RefCell<HashSet<WordPlacements>>,
+    min_areas: RefCell<BinaryHeap<GridIndex>>
 }
 impl<'a> Generator<'a> {
-    pub fn new(words: Vec<&'a str>) -> Generator<'a> {
+    pub fn new(words: Vec<&'a str>, num_areas: usize) -> Generator<'a> {
         Generator {
             word_list: words.clone(),
-            seen: RefCell::new(HashSet::new())
+            seen: RefCell::new(HashSet::new()),
+            min_areas: RefCell::new(BinaryHeap::from(vec![MAX_INDEX; num_areas]))
         }
     }
     // simple generator
-    pub fn generate(words: Vec<&'a str>, (_n, _width): (usize, GridIndex)) -> Vec<Crossword> {
+    pub fn generate(words: Vec<&'a str>, num_areas: usize) -> Vec<Crossword> {
         if words.len() == 0 {
             return vec![];
         }
-        let gen = Generator::new(words);
+        let gen = Generator::new(words, num_areas);
 
         let v = gen.iter().collect();
         v
@@ -37,12 +40,15 @@ impl<'a> Generator<'a> {
     }
 
     fn from_word_vec<'b>(&'b self, crossword: Crossword<'a>, words: Rc<Vec<Option<&'a str>>>) -> Box<Iterator<Item=Crossword<'a>> + 'b> {
-        if words.iter().all(|opt_word| opt_word.is_none()) {
+        let num_remaining_words = words.iter().filter(|opt_word| opt_word.is_some()).count();
+        if num_remaining_words == 0 {
             return Box::new(Some(crossword).into_iter());
         }
+        let no_min_area = self.min_areas.borrow().len() == 0;
         let rc_self_1 = Rc::new(self);
         let rc_self_2 = rc_self_1.clone();
         let rc_self_3 = rc_self_1.clone();
+        let rc_self_4 = rc_self_1.clone();
         let rc_crossword_1 = Rc::new(crossword);
         let rc_crossword_2 = rc_crossword_1.clone();
         let cloned_words = (*words).clone();
@@ -88,8 +94,22 @@ impl<'a> Generator<'a> {
                 let next_pos = next_pos_from_offset(pos, i2 as GridIndex);
                 Some((w, next_pos))
             })
-            .flat_map(move |((new_word_index, next_words), next_pos)| {
-                let next_crossword = rc_crossword_1.set(new_word_index, next_pos);
+            .map(move |((new_word_index, next_words), next_pos)| {
+                (rc_crossword_1.set(new_word_index, next_pos), next_words)
+            })
+            .flat_map(move |(next_crossword, next_words)| {
+                if no_min_area {
+                    return Some((next_crossword, next_words, 0))
+                }
+                let heap = rc_self_4.min_areas.borrow();
+                let min_area = heap.peek().unwrap();
+                let area = next_crossword.bounding_box().area();
+                if area > *min_area {
+                    return None
+                }
+                Some((next_crossword, next_words, area))
+            })
+            .flat_map(move |(next_crossword, next_words, area)| {
                 let mut seen = &mut rc_self_2.seen.borrow_mut();
                 if seen.contains(&next_crossword.positions) {
                     return None
@@ -97,6 +117,14 @@ impl<'a> Generator<'a> {
 
                 if next_crossword.is_valid() {
                     seen.insert(next_crossword.positions.clone());
+                    if !no_min_area && num_remaining_words == 1 {
+
+                        let mut heap = rc_self_2.min_areas.borrow_mut();
+                        let mut min_area = heap.peek_mut().unwrap();
+                        // let area = next_crossword.bounding_box().area();
+                        *min_area = area;
+                    }
+
                     Some((next_crossword, next_words))
                 } else {
                     None
@@ -140,13 +168,12 @@ mod tests {
 
     #[test]
     fn test_generate () {
-        let opts = (1, 5);
         let crosswords = Generator::generate(vec![
             "ton",
             "tok",
             "nob",
             "kob"
-        ], opts);
+        ], 0);
         let expected = make_crossword(vec![
             ("ton", Position { row: 0, col: 0, dir: Horizontal }),
             ("tok", Position { row: 0, col: 0, dir: Vertical }),
@@ -162,7 +189,7 @@ mod tests {
             "took",
             "noob",
             "koob"
-        ], opts);
+        ], 0);
 
         assert_eq!(22, crosswords.len());
     }
@@ -173,7 +200,7 @@ mod tests {
             "tok",
             "nob",
             "kob"
-        ]);
+        ], 0);
         let crosswords: Vec<_> = gen.iter().collect();
         let expected = make_crossword(vec![
             ("ton", Position { row: 0, col: 0, dir: Horizontal }),
@@ -190,9 +217,19 @@ mod tests {
             "took",
             "noob",
             "koob"
-        ]);
+        ], 0);
         let crosswords: Vec<_> = gen.iter().collect();
 
         assert_eq!(22, crosswords.len());
+
+        let gen = Generator::new(vec![
+            "toon",
+            "took",
+            "noob",
+            "koob"
+        ], 10);
+        let crosswords: Vec<_> = gen.iter().collect();
+
+        assert_eq!(16, crosswords.len());
     }
 }

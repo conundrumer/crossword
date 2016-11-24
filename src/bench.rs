@@ -9,7 +9,7 @@ fn generate(b: &mut test::Bencher) {
         "took",
         "noob",
         "koob"
-    ], (1, 5)))
+    ], 0))
 }
 
 #[bench]
@@ -20,7 +20,7 @@ fn generate_medium(b: &mut test::Bencher) {
         "fleet",
         "tenet",
         "eerie"
-    ], (1, 5)))
+    ], 0))
 }
 
 /*
@@ -41,7 +41,7 @@ fn generate_medium(b: &mut test::Bencher) {
  */
 #[bench]
 #[ignore]
-fn generate_huge(b: &mut test::Bencher) {
+fn generate_large(b: &mut test::Bencher) {
     b.iter(|| Generator::generate(vec![
         "monospace",
         "aesthetics",
@@ -49,5 +49,5 @@ fn generate_huge(b: &mut test::Bencher) {
         "vaporwave",
         "crossword",
         "unicode"
-    ], (1, 5)))
+    ], 1))
 }
