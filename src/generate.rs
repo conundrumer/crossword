@@ -95,9 +95,8 @@ impl<'a> Generator<'a> {
                     return None
                 }
 
-                // is_valid is very expensive atm so it's cheaper to first check if it's seen
-                seen.insert(next_crossword.positions.clone());
                 if next_crossword.is_valid() {
+                    seen.insert(next_crossword.positions.clone());
                     Some((next_crossword, next_words))
                 } else {
                     None
