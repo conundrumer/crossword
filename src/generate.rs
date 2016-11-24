@@ -40,12 +40,12 @@ impl<'a> Generator<'a> {
         if words.iter().all(|opt_word| opt_word.is_none()) {
             return Box::new(Some(crossword).into_iter());
         }
+        let rc_self_1 = Rc::new(self);
+        let rc_self_2 = rc_self_1.clone();
+        let rc_self_3 = rc_self_1.clone();
+        let rc_crossword_1 = Rc::new(crossword);
+        let rc_crossword_2 = rc_crossword_1.clone();
         let cloned_words = (*words).clone();
-        let self_cell = Rc::new(self);
-        let self_cell2 = self_cell.clone();
-        let self_cell3 = self_cell.clone();
-        let crossword = Rc::new(crossword);
-        let crossword2 = crossword.clone();
         Box::new(cloned_words.into_iter().enumerate()
             .flat_map(|(new_word_index, opt_word)| {
                 opt_word.map(|new_word| {
@@ -59,10 +59,10 @@ impl<'a> Generator<'a> {
                 (new_word, new_word_index, next_words)
             })
             .flat_map(move |w| {
-                let self_cell = self_cell.clone();
-                crossword2.positions.0.clone().into_iter().enumerate().flat_map(|(word_index, opt_pos)| opt_pos.map(|pos| (word_index, pos)))
+                let rc_self_1 = rc_self_1.clone();
+                rc_crossword_2.positions.0.clone().into_iter().enumerate().flat_map(|(word_index, opt_pos)| opt_pos.map(|pos| (word_index, pos)))
                     .map(move |(word_index, word_pos)| {
-                        let word = self_cell.word_list[word_index];
+                        let word = rc_self_1.word_list[word_index];
                         (word, word_pos)
                     })
                     .map(move |(word, word_pos)| {
@@ -89,8 +89,8 @@ impl<'a> Generator<'a> {
                 Some((w, next_pos))
             })
             .flat_map(move |((new_word_index, next_words), next_pos)| {
-                let next_crossword = crossword.set(new_word_index, next_pos);
-                let mut seen = &mut self_cell2.seen.borrow_mut();
+                let next_crossword = rc_crossword_1.set(new_word_index, next_pos);
+                let mut seen = &mut rc_self_2.seen.borrow_mut();
                 if seen.contains(&next_crossword.positions) {
                     return None
                 }
@@ -103,7 +103,7 @@ impl<'a> Generator<'a> {
                 }
             })
             .flat_map(move |(next_crossword, next_words)| {
-                self_cell3.from_word_vec(next_crossword, next_words)
+                rc_self_3.from_word_vec(next_crossword, next_words)
             }))
 
     }
