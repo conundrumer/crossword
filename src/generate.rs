@@ -60,7 +60,7 @@ impl<'a> Generator<'a> {
             })
             .flat_map(move |w| {
                 let rc_self_1 = rc_self_1.clone();
-                rc_crossword_2.positions.0.clone().into_iter().enumerate().flat_map(|(word_index, opt_pos)| opt_pos.map(|pos| (word_index, pos)))
+                rc_crossword_2.positions.index_positions()
                     .map(move |(word_index, word_pos)| {
                         let word = rc_self_1.word_list[word_index];
                         (word, word_pos)

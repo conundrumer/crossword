@@ -2,7 +2,7 @@ use placement::Position;
 use placement::Direction::Horizontal;
 
 #[derive(Debug, Eq, PartialEq, Clone, Hash)]
-pub struct WordPlacements(pub Vec<Option<Position>>);
+pub struct WordPlacements(Vec<Option<Position>>);
 
 impl WordPlacements {
     pub fn new(n: usize) -> WordPlacements {
@@ -16,8 +16,8 @@ impl WordPlacements {
         next_self.0[word_index] = Some(pos);
         next_self
     }
-    pub fn index_positions<'a>(&'a self) -> impl Iterator<Item=(usize, Position)> + 'a {
-        self.0.iter().enumerate().flat_map(|(word_index, opt_pos)| opt_pos.map(|pos| (word_index, pos)))
+    pub fn index_positions<'a>(&'a self) -> Box<Iterator<Item=(usize, Position)>> {
+        Box::new(self.0.clone().into_iter().enumerate().flat_map(|(word_index, opt_pos)| opt_pos.map(|pos| (word_index, pos))))
     }
 }
 
