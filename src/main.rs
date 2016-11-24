@@ -30,6 +30,7 @@ fn main() {
 
     // println!("{}", iter.count());
     for crossword in iter {
-        println!("{}", crossword);
+        // println!("{}", crossword);
+        println!("{:?}", crossword);
     }
 }

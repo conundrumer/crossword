@@ -32,14 +32,14 @@ impl<'a> Generator<'a> {
         v
     }
 
-    pub fn iter<'b>(&'b self) -> Box<Iterator<Item=Crossword<'a>> + 'b> {
+    pub fn iter<'b>(&'b self) -> Box<Iterator<Item=Crossword> + 'b> {
         let mut remaining_words: Vec<_> = self.word_list.clone().into_iter().map(|x| Some(x)).collect();
         remaining_words[0] = None;
 
-        self.from_word_vec(Crossword::new(self.word_list.clone()), Rc::new(remaining_words))
+        self.from_word_vec(Crossword::new(&self.word_list), Rc::new(remaining_words))
     }
 
-    fn from_word_vec<'b>(&'b self, crossword: Crossword<'a>, words: Rc<Vec<Option<&'a str>>>) -> Box<Iterator<Item=Crossword<'a>> + 'b> {
+    fn from_word_vec<'b>(&'b self, crossword: Crossword, words: Rc<Vec<Option<&'a str>>>) -> Box<Iterator<Item=Crossword> + 'b> {
         let num_remaining_words = words.iter().filter(|opt_word| opt_word.is_some()).count();
         if num_remaining_words == 0 {
             return Box::new(Some(crossword).into_iter());
@@ -103,7 +103,7 @@ impl<'a> Generator<'a> {
                 }
                 let heap = rc_self_4.min_areas.borrow();
                 let min_area = heap.peek().unwrap();
-                let area = next_crossword.bounding_box().area();
+                let area = next_crossword.bounding_box(&rc_self_4.word_list).area();
                 if area > *min_area {
                     return None
                 }
@@ -115,7 +115,7 @@ impl<'a> Generator<'a> {
                     return None
                 }
 
-                if next_crossword.is_valid() {
+                if next_crossword.is_valid(&rc_self_2.word_list) {
                     seen.insert(next_crossword.positions.clone());
                     if !no_min_area && num_remaining_words == 1 {
 
@@ -149,22 +149,9 @@ mod tests {
 
     use placement::{ Position };
     use placement::Direction::{ Horizontal, Vertical };
-    use crossword::{ Crossword };
-    use word_placements::WordPlacements;
+    use crossword::tests::make_crossword;
 
     type WordPosition = (&'static str, Position);
-
-    fn make_crossword(word_positions: Vec<WordPosition>) -> Crossword {
-        let (word_list, positions): (Vec<_>, Vec<_>) = word_positions.iter().cloned().unzip();
-        let n = positions.len();
-        Crossword {
-            word_list: word_list,
-            positions: positions.into_iter().enumerate().fold(
-                WordPlacements::new(n),
-                |wp, (i, x)| wp.set(i, x)
-            )
-        }
-    }
 
     #[test]
     fn test_generate () {
@@ -174,7 +161,7 @@ mod tests {
             "nob",
             "kob"
         ], 0);
-        let expected = make_crossword(vec![
+        let (expected, _) = make_crossword(vec![
             ("ton", Position { row: 0, col: 0, dir: Horizontal }),
             ("tok", Position { row: 0, col: 0, dir: Vertical }),
             ("nob", Position { row: 0, col: 2, dir: Vertical }),
@@ -202,7 +189,7 @@ mod tests {
             "kob"
         ], 0);
         let crosswords: Vec<_> = gen.iter().collect();
-        let expected = make_crossword(vec![
+        let (expected, _) = make_crossword(vec![
             ("ton", Position { row: 0, col: 0, dir: Horizontal }),
             ("tok", Position { row: 0, col: 0, dir: Vertical }),
             ("nob", Position { row: 0, col: 2, dir: Vertical }),
