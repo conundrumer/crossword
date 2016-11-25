@@ -1,4 +1,4 @@
-use placement::{ Position, BoundingBox, GridIndex, MAX_INDEX, MIN_INDEX };
+use placement::{ Position, BoundingBox, GridIndex };
 use grid::{ Grid };
 use word_placements::WordPlacements;
 
@@ -28,18 +28,8 @@ impl Crossword {
             grid: self.grid.set(word, pos)
         }
     }
-    pub fn bounding_box(&self, word_list: &Vec<&str>) -> BoundingBox {
-        self.positions.index_positions().fold(
-            BoundingBox::new(MAX_INDEX, MAX_INDEX, MIN_INDEX, MIN_INDEX),
-            |bb, (word_index, pos)| {
-                let word = word_list[word_index];
-                bb.combine(BoundingBox::from_word_pos(word, pos))
-            }
-        )
-    }
-    pub fn bounding_box_with_word(&self, word_list: &Vec<&str>, word_index: usize, pos: Position) -> BoundingBox {
-        let word = word_list[word_index];
-        self.bounding_box(word_list).combine(BoundingBox::from_word_pos(word, pos))
+    pub fn bounding_box(&self) -> BoundingBox {
+        self.grid.bb
     }
 
     pub fn is_valid(&self, _word_list: &Vec<&str>) -> bool {
@@ -104,8 +94,8 @@ pub mod tests {
 
     #[test]
     fn bounding_box() {
-        let (crossword, word_list) = make_hello_world();
-        let bb = crossword.bounding_box(&word_list);
+        let (crossword, _) = make_hello_world();
+        let bb = crossword.bounding_box();
         assert_eq!(BoundingBox { top: 0, left: 0, bottom: 4, right: 4 }, bb);
     }
 

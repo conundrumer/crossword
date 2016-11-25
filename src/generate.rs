@@ -46,14 +46,14 @@ impl<'a> Generator<'a> {
             return Box::new(Some(crossword).into_iter());
         }
         let no_min_area = self.min_areas.borrow().len() == 0;
-        let rc_self_1 = Rc::new(self);
-        let rc_self_2 = rc_self_1.clone();
-        let rc_self_3 = rc_self_1.clone();
-        let rc_self_4 = rc_self_1.clone();
-        let rc_self_5 = rc_self_1.clone();
+        let &Generator {
+            ref word_list,
+            ref seen,
+            ref min_areas
+        } = self;
+        let bb = crossword.bounding_box();
         let rc_crossword_1 = Rc::new(crossword);
         let rc_crossword_2 = rc_crossword_1.clone();
-        let rc_crossword_3 = rc_crossword_1.clone();
         let cloned_words = (*words).clone();
         Box::new(cloned_words.into_iter().enumerate()
             .flat_map(|(new_word_index, opt_word)| {
@@ -68,10 +68,9 @@ impl<'a> Generator<'a> {
                 (new_word, new_word_index, next_words)
             })
             .flat_map(move |w| {
-                let rc_self_1 = rc_self_1.clone();
                 rc_crossword_2.positions.index_positions()
                     .map(move |(word_index, word_pos)| {
-                        let word = rc_self_1.word_list[word_index];
+                        let word = word_list[word_index];
                         (word, word_pos)
                     })
                     .map(move |(word, word_pos)| {
@@ -99,32 +98,32 @@ impl<'a> Generator<'a> {
             })
             .flat_map(move |((new_word_index, next_words), next_pos)| {
                 if no_min_area {
-                    return Some((new_word_index, next_words, next_pos, 0))
+                    return Some((new_word_index, next_words, next_pos))
                 }
-                let area = rc_crossword_3.bounding_box_with_word(&rc_self_4.word_list, new_word_index, next_pos).area();
-                let heap = rc_self_4.min_areas.borrow();
+                let area = bb.combine_word_pos(word_list[new_word_index], next_pos).area();
+                let heap = min_areas.borrow();
                 let min_area = heap.peek().unwrap();
                 if area > *min_area {
                     return None
                 }
-                Some((new_word_index, next_words, next_pos, area))
+                Some((new_word_index, next_words, next_pos))
             })
-            .map(move |(new_word_index, next_words, next_pos, area)| {
-                (rc_crossword_1.set(&rc_self_5.word_list, new_word_index, next_pos), next_words, area)
+            .map(move |(new_word_index, next_words, next_pos)| {
+                (rc_crossword_1.set(word_list, new_word_index, next_pos), next_words)
             })
-            .flat_map(move |(next_crossword, next_words, area)| {
-                let mut seen = &mut rc_self_2.seen.borrow_mut();
+            .flat_map(move |(next_crossword, next_words)| {
+                let mut seen = &mut seen.borrow_mut();
                 if seen.contains(&next_crossword.positions) {
                     return None
                 }
 
-                if next_crossword.is_valid(&rc_self_2.word_list) {
+                if next_crossword.is_valid(word_list) {
                     seen.insert(next_crossword.positions.clone());
                     if !no_min_area && num_remaining_words == 1 {
 
-                        let mut heap = rc_self_2.min_areas.borrow_mut();
+                        let mut heap = min_areas.borrow_mut();
                         let mut min_area = heap.peek_mut().unwrap();
-                        // let area = next_crossword.bounding_box().area();
+                        let area = next_crossword.bounding_box().area();
                         *min_area = area;
                     }
 
@@ -134,7 +133,7 @@ impl<'a> Generator<'a> {
                 }
             })
             .flat_map(move |(next_crossword, next_words)| {
-                rc_self_3.from_word_vec(next_crossword, next_words)
+                self.from_word_vec(next_crossword, next_words)
             }))
 
     }

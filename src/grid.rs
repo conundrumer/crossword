@@ -17,7 +17,7 @@ pub struct Grid {
     pub is_valid: bool,
     pub num_overlaps: GridIndex,
     grid: Vec<GridCell>,
-    bb: BoundingBox
+    pub bb: BoundingBox
 }
 impl Grid {
     pub fn new(bb: BoundingBox) -> Grid {

@@ -2,7 +2,7 @@ use std;
 
 pub type GridIndex = i32;
 pub const MAX_INDEX: GridIndex = std::i32::MAX;
-pub const MIN_INDEX: GridIndex = std::i32::MIN;
+// pub const MIN_INDEX: GridIndex = std::i32::MIN;
 
 #[derive(Debug, Copy, Clone, PartialEq, Eq, Hash)]
 pub struct Position {
@@ -62,6 +62,9 @@ impl BoundingBox {
             max(self.bottom, other.bottom),
             max(self.right, other.right)
         )
+    }
+    pub fn combine_word_pos(&self, word: &str, pos: Position) -> BoundingBox {
+        self.combine(BoundingBox::from_word_pos(word, pos))
     }
     pub fn width(&self) -> GridIndex {
         self.right - self.left + 1
