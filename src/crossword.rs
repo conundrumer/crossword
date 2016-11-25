@@ -5,7 +5,7 @@ use word_placements::WordPlacements;
 #[derive(Debug)]
 pub struct Crossword {
     pub positions: WordPlacements,
-    grid: Grid
+    pub grid: Grid
 }
 impl PartialEq for Crossword {
     fn eq(&self, other: &Crossword) -> bool {

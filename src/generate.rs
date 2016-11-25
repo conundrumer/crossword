@@ -108,8 +108,12 @@ impl<'a> Generator<'a> {
                 }
                 Some((new_word_index, next_words, next_pos))
             })
-            .map(move |(new_word_index, next_words, next_pos)| {
-                (rc_crossword_1.set(word_list, new_word_index, next_pos), next_words)
+            .flat_map(move |(new_word_index, next_words, next_pos)| {
+                if rc_crossword_1.grid.can_add_word(word_list[new_word_index], next_pos) {
+                    Some((rc_crossword_1.set(word_list, new_word_index, next_pos), next_words))
+                } else {
+                    None
+                }
             })
             .flat_map(move |(next_crossword, next_words)| {
                 let mut seen = &mut seen.borrow_mut();
