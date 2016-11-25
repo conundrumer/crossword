@@ -15,6 +15,7 @@ use self::GridCell::*;
 #[derive(Debug)]
 pub struct Grid {
     pub is_valid: bool,
+    pub num_overlaps: GridIndex,
     grid: Vec<GridCell>,
     bb: BoundingBox
 }
@@ -22,6 +23,7 @@ impl Grid {
     pub fn new(bb: BoundingBox) -> Grid {
         Grid {
             is_valid: true,
+            num_overlaps: 0,
             grid: vec![Empty; ((2 + bb.width()) * (2 + bb.height())) as usize],
             bb: bb
         }
@@ -43,6 +45,7 @@ impl Grid {
     pub fn set(&self, word: &str, pos: Position) -> Grid {
         let bb = self.bb.combine(BoundingBox::from_word_pos(word, pos));
         let mut new = Grid::new(bb);
+        new.num_overlaps = self.num_overlaps;
         for (i, &cell) in self.grid.iter().enumerate() {
             let (row, col) = self.row_col_inverse(i);
             let row_col = new.row_col(row, col);
@@ -110,6 +113,9 @@ impl Grid {
                 _ => unreachable!()
             }
         };
+        if let Letter(_, None) = next_cell {
+            self.num_overlaps += 1;
+        }
         self.grid[row_col] = next_cell;
         next_cell == Collision
     }

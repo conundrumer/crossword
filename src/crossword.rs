@@ -1,4 +1,4 @@
-use placement::{ Position, BoundingBox, MAX_INDEX, MIN_INDEX };
+use placement::{ Position, BoundingBox, GridIndex, MAX_INDEX, MIN_INDEX };
 use grid::{ Grid };
 use word_placements::WordPlacements;
 
@@ -44,6 +44,9 @@ impl Crossword {
 
     pub fn is_valid(&self, _word_list: &Vec<&str>) -> bool {
         self.grid.is_valid
+    }
+    pub fn num_overlaps(&self) -> GridIndex {
+        self.grid.num_overlaps
     }
 }
 use std::fmt::{Display, Formatter, Result};

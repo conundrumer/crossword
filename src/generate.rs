@@ -171,6 +171,7 @@ mod tests {
             ("kob", Position { row: 2, col: 0, dir: Horizontal })
         ]);
         assert_eq!(1, crosswords.len());
+        assert_eq!(4, crosswords[0].num_overlaps());
 
         assert_eq!(expected, crosswords[0]);
 
