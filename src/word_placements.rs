@@ -1,14 +1,11 @@
 use placement::Position;
-use placement::Direction::Horizontal;
 
 #[derive(Debug, Eq, PartialEq, Clone, Hash)]
 pub struct WordPlacements(Vec<Option<Position>>);
 
 impl WordPlacements {
     pub fn new(n: usize) -> WordPlacements {
-        let mut positions = vec![None; n];
-        positions[0] = Some(Position { row: 0, col: 0, dir: Horizontal });
-        WordPlacements(positions)
+        WordPlacements(vec![None; n])
     }
     // immutable set: returns a new copy
     pub fn set(&self, word_index: usize, pos: Position) -> WordPlacements {
@@ -29,17 +26,17 @@ mod tests {
 
     #[test]
     fn new() {
-        let wp1 = WordPlacements(vec![Some(Position { row: 0, col: 0, dir: Horizontal })]);
+        let wp1 = WordPlacements(vec![None]);
         assert_eq!(wp1, WordPlacements::new(1));
 
-        let wp2 = WordPlacements(vec![Some(Position { row: 0, col: 0, dir: Horizontal }), None]);
+        let wp2 = WordPlacements(vec![None, None]);
         assert_eq!(wp2, WordPlacements::new(2));
     }
     #[test]
     fn set() {
         let pos = Position { row: 1, col: -1, dir: Vertical };
         let wp = WordPlacements(vec![
-            Some(Position { row: 0, col: 0, dir: Horizontal }),
+            None,
             Some(pos)
         ]);
         assert_eq!(wp, WordPlacements::new(2).set(1, pos));
@@ -51,7 +48,7 @@ mod tests {
         let wp = WordPlacements::new(3).set(2, pos);
         let iter = wp.index_positions();
         let vec: Vec<_> = iter.collect();
-        assert_eq!(vec![(0, Position { row: 0, col: 0, dir: Horizontal }), (2, pos)], vec);
+        assert_eq!(vec![(2, pos)], vec);
     }
 
     #[test]

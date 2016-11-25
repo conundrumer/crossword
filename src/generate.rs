@@ -4,7 +4,7 @@ use std::cell::RefCell;
 use std::rc::Rc;
 
 use crossword::{ Crossword };
-use placement::{ Position, GridIndex, MAX_INDEX };
+use placement::{ Position, GridIndex, START_POSITION, MAX_INDEX };
 use placement::Direction::{ Horizontal, Vertical };
 use word_placements::WordPlacements;
 
@@ -33,10 +33,11 @@ impl<'a> Generator<'a> {
     }
 
     pub fn iter<'b>(&'b self) -> Box<Iterator<Item=Crossword> + 'b> {
-        let mut remaining_words: Vec<_> = self.word_list.clone().into_iter().map(|x| Some(x)).collect();
+        let mut remaining_words: Vec<_> = self.word_list.iter().cloned().map(|x| Some(x)).collect();
         remaining_words[0] = None;
+        let init_crossword = Crossword::new(&self.word_list).set(&self.word_list, 0, START_POSITION);
 
-        self.from_word_vec(Crossword::new(&self.word_list), Rc::new(remaining_words))
+        self.from_word_vec(init_crossword, Rc::new(remaining_words))
     }
 
     fn from_word_vec<'b>(&'b self, crossword: Crossword, words: Rc<Vec<Option<&'a str>>>) -> Box<Iterator<Item=Crossword> + 'b> {
@@ -49,6 +50,7 @@ impl<'a> Generator<'a> {
         let rc_self_2 = rc_self_1.clone();
         let rc_self_3 = rc_self_1.clone();
         let rc_self_4 = rc_self_1.clone();
+        let rc_self_5 = rc_self_1.clone();
         let rc_crossword_1 = Rc::new(crossword);
         let rc_crossword_2 = rc_crossword_1.clone();
         let rc_crossword_3 = rc_crossword_1.clone();
@@ -108,7 +110,7 @@ impl<'a> Generator<'a> {
                 Some((new_word_index, next_words, next_pos, area))
             })
             .map(move |(new_word_index, next_words, next_pos, area)| {
-                (rc_crossword_1.set(new_word_index, next_pos), next_words, area)
+                (rc_crossword_1.set(&rc_self_5.word_list, new_word_index, next_pos), next_words, area)
             })
             .flat_map(move |(next_crossword, next_words, area)| {
                 let mut seen = &mut rc_self_2.seen.borrow_mut();

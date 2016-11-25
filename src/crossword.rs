@@ -1,17 +1,11 @@
-use placement::{ Position, BoundingBox, GridIndex, MAX_INDEX, MIN_INDEX };
+use placement::{ Position, BoundingBox, MAX_INDEX, MIN_INDEX };
 use grid::{ Grid };
 use word_placements::WordPlacements;
 
 #[derive(Debug)]
 pub struct Crossword {
-    pub positions: WordPlacements
-}
-impl Clone for Crossword {
-    fn clone(&self) -> Self {
-        Crossword {
-            positions: self.positions.clone()
-        }
-    }
+    pub positions: WordPlacements,
+    grid: Grid
 }
 impl PartialEq for Crossword {
     fn eq(&self, other: &Crossword) -> bool {
@@ -22,12 +16,16 @@ impl Eq for Crossword {}
 impl Crossword {
     pub fn new(word_list: &Vec<&str>) -> Crossword {
         Crossword {
-            positions: WordPlacements::new(word_list.len())
+            positions: WordPlacements::new(word_list.len()),
+            grid: Grid::new(BoundingBox::new(0, 0, 0, 0))
         }
+
     }
-    pub fn set(&self, word_index: usize, pos: Position) -> Crossword {
+    pub fn set(&self, word_list: &Vec<&str>, word_index: usize, pos: Position) -> Crossword {
+        let word = word_list[word_index];
         Crossword {
-            positions: self.positions.set(word_index, pos)
+            positions: self.positions.set(word_index, pos),
+            grid: self.grid.set(word, pos)
         }
     }
     pub fn bounding_box(&self, word_list: &Vec<&str>) -> BoundingBox {
@@ -44,67 +42,31 @@ impl Crossword {
         self.bounding_box(word_list).combine(BoundingBox::from_word_pos(word, pos))
     }
 
-    fn to_valid_grid(&self, word_list: &Vec<&str>, validate: bool) -> Option<Grid> {
-        let bb = self.bounding_box(word_list);
-        let mut grid = Grid::new(bb);
-        for (word_index, pos) in self.positions.index_positions() {
-            let word = word_list[word_index];
-            // TODO: use an extended array/iter lib to append things more cleanly
-            let startpoint = Some((pos.letter_pos(-1), None)).into_iter();
-            let endpoint = Some((pos.letter_pos(word.len() as GridIndex), None)).into_iter();
-            let chars = word.chars().enumerate().map(|(j, c)| (pos.letter_pos(j as GridIndex), Some(c)));
-
-            for (pos, opt_c) in startpoint.chain(chars).chain(endpoint) {
-                let collided = match opt_c {
-                    None => grid.set_block(pos),
-                    Some(c) => grid.set_char(pos, pos.dir, c)
-                };
-                if validate {
-                    if collided {
-                        return None
-                    }
-                }
-            }
-        }
-        return Some(grid)
-    }
-
-    fn to_grid(&self, word_list: &Vec<&str>) -> Grid {
-        self.to_valid_grid(word_list, false).unwrap()
-    }
-
-    pub fn is_valid(&self, word_list: &Vec<&str>) -> bool {
-        match self.to_valid_grid(word_list, true) {
-            None => false,
-            Some(_) => true
-        }
+    pub fn is_valid(&self, _word_list: &Vec<&str>) -> bool {
+        self.grid.is_valid
     }
 }
-// use std::fmt::{Display, Formatter, Result};
-// impl Display for Crossword {
-//     fn fmt(&self, f: &mut Formatter) -> Result {
-//         write!(f, "{}", self.to_grid())
-//     }
-// }
+use std::fmt::{Display, Formatter, Result};
+impl Display for Crossword {
+    fn fmt(&self, f: &mut Formatter) -> Result {
+        write!(f, "{}", self.grid)
+    }
+}
 
 #[cfg(test)]
 pub mod tests {
     use super::*;
     use placement::{ Position, BoundingBox };
     use placement::Direction::{ Horizontal, Vertical };
-    use word_placements::WordPlacements;
 
     type WordPosition = (&'static str, Position);
 
     pub fn make_crossword(word_positions: Vec<WordPosition>) -> (Crossword, Vec<&str>) {
         let (word_list, positions): (Vec<_>, Vec<_>) = word_positions.iter().cloned().unzip();
-        let n = positions.len();
-        (Crossword {
-            positions: positions.into_iter().enumerate().fold(
-                WordPlacements::new(n),
-                |wp, (i, x)| wp.set(i, x)
-            )
-        }, word_list)
+        (positions.into_iter().enumerate().fold(
+            Crossword::new(&word_list),
+            |cw, (word_index, pos)| cw.set(&word_list, word_index, pos)
+        ), word_list)
     }
 
     //   0 1 2 3 4
@@ -144,16 +106,16 @@ pub mod tests {
         assert_eq!(BoundingBox { top: 0, left: 0, bottom: 4, right: 4 }, bb);
     }
 
-    // #[test]
-    // fn to_grid() {
-    //     let expected = "       \n   w   \n   o   \n   r   \n hello \n   d   \n       ";
-    //     let (crossword, word_list) = make_hello_world();
-    //     println!("Expected:");
-    //     println!("{}", expected);
-    //     println!("Actual:");
-    //     println!("{}", crossword);
-    //     assert_eq!(expected, format!("{}", crossword));
-    // }
+    #[test]
+    fn to_grid() {
+        let expected = "       \n   w   \n   o   \n   r   \n hello \n   d   \n       ";
+        let (crossword, _) = make_hello_world();
+        println!("Expected:");
+        println!("{}", expected);
+        println!("Actual:");
+        println!("{}", crossword);
+        assert_eq!(expected, format!("{}", crossword));
+    }
 
     #[test]
     fn is_valid() {

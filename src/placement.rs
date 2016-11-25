@@ -26,6 +26,7 @@ impl Position {
         }
     }
 }
+pub const START_POSITION: Position = Position { row: 0, col: 0, dir: Direction::Horizontal };
 
 #[derive(Debug, Copy, Clone, PartialEq, Eq, Hash)]
 pub enum Direction {
