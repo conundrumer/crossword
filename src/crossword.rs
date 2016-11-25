@@ -31,16 +31,17 @@ impl Crossword {
         }
     }
     pub fn bounding_box(&self, word_list: &Vec<&str>) -> BoundingBox {
-        use std::cmp::{min, max};
-        let (top, left, bottom, right) = self.positions.index_positions().fold(
-            (MAX_INDEX, MAX_INDEX, MIN_INDEX, MIN_INDEX),
-            |(top, left, bottom, right), (word_index, pos)| {
+        self.positions.index_positions().fold(
+            BoundingBox::new(MAX_INDEX, MAX_INDEX, MIN_INDEX, MIN_INDEX),
+            |bb, (word_index, pos)| {
                 let word = word_list[word_index];
-                let last_pos = pos.letter_pos((word.len() - 1) as GridIndex);
-                (min(top, pos.row), min(left, pos.col), max(bottom, last_pos.row), max(right, last_pos.col))
+                bb.combine(BoundingBox::from_word_pos(word, pos))
             }
-        );
-        BoundingBox::new(top, left, bottom, right)
+        )
+    }
+    pub fn bounding_box_with_word(&self, word_list: &Vec<&str>, word_index: usize, pos: Position) -> BoundingBox {
+        let word = word_list[word_index];
+        self.bounding_box(word_list).combine(BoundingBox::from_word_pos(word, pos))
     }
 
     fn to_valid_grid(&self, word_list: &Vec<&str>, validate: bool) -> Option<Grid> {

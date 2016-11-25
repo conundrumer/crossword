@@ -37,12 +37,30 @@ pub enum Direction {
 pub struct BoundingBox {
     pub top: GridIndex,
     pub left: GridIndex,
-    pub right: GridIndex,
-    pub bottom: GridIndex
+    pub bottom: GridIndex,
+    pub right: GridIndex
 }
 impl BoundingBox {
     pub fn new(top: GridIndex, left: GridIndex, bottom: GridIndex, right: GridIndex) -> BoundingBox {
-        BoundingBox { top: top, left: left, right: right, bottom: bottom }
+        BoundingBox {
+            top: top,
+            left: left,
+            bottom: bottom,
+            right: right
+        }
+    }
+    pub fn from_word_pos(word: &str, pos: Position) -> BoundingBox {
+        let last_pos = pos.letter_pos((word.len() - 1) as GridIndex);
+        BoundingBox::new(pos.row, pos.col, last_pos.row, last_pos.col)
+    }
+    pub fn combine(&self, other: BoundingBox) -> BoundingBox {
+        use std::cmp::{min, max};
+        BoundingBox::new(
+            min(self.top, other.top),
+            min(self.left, other.left),
+            max(self.bottom, other.bottom),
+            max(self.right, other.right)
+        )
     }
     pub fn width(&self) -> GridIndex {
         self.right - self.left + 1
