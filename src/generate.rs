@@ -120,21 +120,16 @@ impl<'a> Generator<'a> {
                 if seen.contains(&next_crossword.positions) {
                     return None
                 }
+                seen.insert(next_crossword.positions.clone());
+                if !no_min_area && num_remaining_words == 1 {
 
-                if next_crossword.is_valid(word_list) {
-                    seen.insert(next_crossword.positions.clone());
-                    if !no_min_area && num_remaining_words == 1 {
-
-                        let mut heap = min_areas.borrow_mut();
-                        let mut min_area = heap.peek_mut().unwrap();
-                        let area = next_crossword.bounding_box().area();
-                        *min_area = area;
-                    }
-
-                    Some((next_crossword, next_words))
-                } else {
-                    None
+                    let mut heap = min_areas.borrow_mut();
+                    let mut min_area = heap.peek_mut().unwrap();
+                    let area = next_crossword.bounding_box().area();
+                    *min_area = area;
                 }
+
+                Some((next_crossword, next_words))
             })
             .flat_map(move |(next_crossword, next_words)| {
                 self.from_word_vec(next_crossword, next_words)
