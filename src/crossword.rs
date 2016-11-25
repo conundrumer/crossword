@@ -1,4 +1,4 @@
-use placement::{ Position, BoundingBox, GridIndex };
+use placement::{ Position, BoundingBox };
 use grid::{ Grid };
 use word_placements::WordPlacements;
 
@@ -35,7 +35,7 @@ impl Crossword {
     pub fn is_valid(&self, _word_list: &Vec<&str>) -> bool {
         self.grid.is_valid
     }
-    pub fn num_overlaps(&self) -> GridIndex {
+    pub fn num_overlaps(&self) -> i8 {
         self.grid.num_overlaps
     }
 }

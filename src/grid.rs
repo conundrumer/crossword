@@ -1,6 +1,6 @@
 use std::fmt::{Display, Formatter, Result};
 
-use placement::{ Position, GridIndex, BoundingBox, Direction };
+use placement::{ Position, BoundingBox, Direction };
 use placement::Direction::{ Horizontal, Vertical };
 
 #[derive(Debug, Copy, Clone, PartialEq)]
@@ -13,10 +13,10 @@ enum GridCell {
 use self::GridCell::*;
 impl GridCell {
 
-    fn from_word<'a>(word: &'a str, pos: Position) -> impl Iterator<Item=(GridCell, (GridIndex, GridIndex))> + 'a {
+    fn from_word<'a>(word: &'a str, pos: Position) -> impl Iterator<Item=(GridCell, (i8, i8))> + 'a {
         let letter_iter = word.chars().enumerate()
             .map(move |(j, c)| {
-                (pos.letter_pos(j as GridIndex), c)
+                (pos.letter_pos(j as i8), c)
             })
             .flat_map(|(pos, c)| {
                 let ((row1, col1), (row2, col2)) = match pos.dir {
@@ -29,7 +29,7 @@ impl GridCell {
                 Some(cell1).into_iter().chain(Some(cell2).into_iter()).chain(Some(cell3).into_iter())
             });
         let start_pos = pos.letter_pos(-1);
-        let end_pos = pos.letter_pos(word.len() as GridIndex);
+        let end_pos = pos.letter_pos(word.len() as i8);
         let start_cell = (Block(None), (start_pos.row, start_pos.col));
         let end_cell = (Block(None), (end_pos.row, end_pos.col));
         Some(start_cell).into_iter().chain(letter_iter).chain(Some(end_cell).into_iter())
@@ -69,7 +69,7 @@ impl GridCell {
 #[derive(Debug)]
 pub struct Grid {
     pub is_valid: bool,
-    pub num_overlaps: GridIndex,
+    pub num_overlaps: i8,
     grid: Vec<GridCell>,
     pub bb: BoundingBox
 }
@@ -78,25 +78,28 @@ impl Grid {
         Grid {
             is_valid: true,
             num_overlaps: 0,
-            grid: vec![Empty; ((2 + bb.width()) * (2 + bb.height())) as usize],
+            grid: vec![Empty; ((2 + bb.width() as usize) * (2 + bb.height()) as usize)],
             bb: bb
         }
     }
-    fn row(&self, row: GridIndex) -> GridIndex {
+    fn row(&self, row: i8) -> i8 {
         (row - self.bb.top + 1)
     }
-    fn col(&self, col: GridIndex) -> GridIndex {
+    fn col(&self, col: i8) -> i8 {
         (col - self.bb.left + 1)
     }
-    fn row_col(&self, row: GridIndex, col: GridIndex) -> usize {
+    fn row_col(&self, row: i8, col: i8) -> usize {
         let row = self.row(row) as usize;
         let col = self.col(col) as usize;
-        (2 + self.bb.width() as usize) * row + col
+        let width = self.bb.width() as usize;
+        (2 + width) * row + col
     }
-    fn row_col_inverse(&self, i: usize) -> (GridIndex, GridIndex) {
-        let i = i as GridIndex;
-        let actual_width = 2 + self.bb.width();
-        (i / actual_width + self.bb.top - 1, i % actual_width + self.bb.left - 1)
+    fn row_col_inverse(&self, i: usize) -> (i8, i8) {
+        let i = i as i16;
+        let top = self.bb.top as i16;
+        let left = self.bb.left as i16;
+        let actual_width = 2 + self.bb.width() as i16;
+        ((i / actual_width + top - 1) as i8, (i % actual_width + left - 1) as i8)
     }
     pub fn set(&self, word: &str, pos: Position) -> Grid {
         let bb = self.bb.combine(BoundingBox::from_word_pos(word, pos));

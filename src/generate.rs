@@ -1,24 +1,24 @@
+use std;
 use std::collections::HashSet;
 use std::collections::BinaryHeap;
 use std::cell::RefCell;
 use std::rc::Rc;
 
 use crossword::{ Crossword };
-use placement::{ Position, GridIndex, START_POSITION, MAX_INDEX };
-use placement::Direction::{ Horizontal, Vertical };
+use placement::{ START_POSITION };
 use word_placements::WordPlacements;
 
 pub struct Generator<'a> {
     word_list: Vec<&'a str>,
     seen: RefCell<HashSet<WordPlacements>>,
-    min_areas: RefCell<BinaryHeap<GridIndex>>
+    min_areas: RefCell<BinaryHeap<i16>>
 }
 impl<'a> Generator<'a> {
     pub fn new(words: Vec<&'a str>, num_areas: usize) -> Generator<'a> {
         Generator {
             word_list: words.clone(),
             seen: RefCell::new(HashSet::new()),
-            min_areas: RefCell::new(BinaryHeap::from(vec![MAX_INDEX; num_areas]))
+            min_areas: RefCell::new(BinaryHeap::from(vec![std::i16::MAX; num_areas]))
         }
     }
     // simple generator
@@ -80,7 +80,7 @@ impl<'a> Generator<'a> {
             .flat_map(|(w, (word, word_pos))| {
                 word.chars().enumerate()
                     .map(move |(i1, c1)| {
-                        let pos = word_pos.letter_pos(i1 as GridIndex);
+                        let pos = word_pos.letter_pos(i1 as i8);
                         (w.clone(), (pos, c1))
                     })
             })
@@ -93,7 +93,7 @@ impl<'a> Generator<'a> {
                 if c1 != c2 {
                     return None
                 }
-                let next_pos = next_pos_from_offset(pos, i2 as GridIndex);
+                let next_pos = pos.from_offset(i2 as i8);
                 Some((w, next_pos))
             })
             .flat_map(move |((new_word_index, next_words), next_pos)| {
@@ -135,12 +135,6 @@ impl<'a> Generator<'a> {
                 self.from_word_vec(next_crossword, next_words)
             }))
 
-    }
-}
-fn next_pos_from_offset(pos: Position, i: GridIndex) -> Position {
-    match pos.dir {
-        Horizontal => Position { row: pos.row - i, col: pos.col, dir: Vertical },
-        Vertical => Position { row: pos.row, col: pos.col - i, dir: Horizontal }
     }
 }
 

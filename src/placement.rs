@@ -1,48 +1,57 @@
-use std;
-
-pub type GridIndex = i32;
-pub const MAX_INDEX: GridIndex = std::i32::MAX;
-// pub const MIN_INDEX: GridIndex = std::i32::MIN;
+#[derive(Debug, Copy, Clone, PartialEq, Eq, Hash)]
+pub enum Direction {
+    Horizontal,
+    Vertical
+}
+use self::Direction::*;
 
 #[derive(Debug, Copy, Clone, PartialEq, Eq, Hash)]
 pub struct Position {
-    pub row: GridIndex,
-    pub col: GridIndex,
+    pub row: i8,
+    pub col: i8,
     pub dir: Direction
 }
 impl Position {
-    pub fn letter_pos(&self, i: GridIndex) -> Position {
+    pub fn letter_pos(&self, i: i8) -> Position {
         match self.dir {
-            Direction::Horizontal => Position {
+            Horizontal => Position {
                 row: self.row,
                 col: self.col + i,
                 dir: self.dir
             },
-            Direction::Vertical => Position {
+            Vertical => Position {
                 row: self.row + i,
                 col: self.col,
                 dir: self.dir
             }
         }
     }
+    pub fn from_offset(&self, i: i8) -> Position {
+        match self.dir {
+            Horizontal => Position {
+                row: self.row - i,
+                col: self.col,
+                dir: Vertical
+            },
+            Vertical => Position {
+                row: self.row,
+                col: self.col - i,
+                dir: Horizontal
+            }
+        }
+    }
 }
-pub const START_POSITION: Position = Position { row: 0, col: 0, dir: Direction::Horizontal };
-
-#[derive(Debug, Copy, Clone, PartialEq, Eq, Hash)]
-pub enum Direction {
-    Horizontal,
-    Vertical
-}
+pub const START_POSITION: Position = Position { row: 0, col: 0, dir: Horizontal };
 
 #[derive(Debug, Copy, Clone, PartialEq, Eq)]
 pub struct BoundingBox {
-    pub top: GridIndex,
-    pub left: GridIndex,
-    pub bottom: GridIndex,
-    pub right: GridIndex
+    pub top: i8,
+    pub left: i8,
+    pub bottom: i8,
+    pub right: i8
 }
 impl BoundingBox {
-    pub fn new(top: GridIndex, left: GridIndex, bottom: GridIndex, right: GridIndex) -> BoundingBox {
+    pub fn new(top: i8, left: i8, bottom: i8, right: i8) -> BoundingBox {
         BoundingBox {
             top: top,
             left: left,
@@ -51,7 +60,7 @@ impl BoundingBox {
         }
     }
     pub fn from_word_pos(word: &str, pos: Position) -> BoundingBox {
-        let last_pos = pos.letter_pos((word.len() - 1) as GridIndex);
+        let last_pos = pos.letter_pos((word.len() - 1) as i8);
         BoundingBox::new(pos.row, pos.col, last_pos.row, last_pos.col)
     }
     pub fn combine(&self, other: BoundingBox) -> BoundingBox {
@@ -66,13 +75,13 @@ impl BoundingBox {
     pub fn combine_word_pos(&self, word: &str, pos: Position) -> BoundingBox {
         self.combine(BoundingBox::from_word_pos(word, pos))
     }
-    pub fn width(&self) -> GridIndex {
-        self.right - self.left + 1
+    pub fn width(&self) -> i16 {
+        self.right as i16 - self.left as i16 + 1
     }
-    pub fn height(&self) -> GridIndex {
-        self.bottom - self.top + 1
+    pub fn height(&self) -> i16 {
+        self.bottom as i16 - self.top as i16 + 1
     }
-    pub fn area(&self) -> GridIndex {
+    pub fn area(&self) -> i16 {
         self.width() * self.height()
     }
 }
