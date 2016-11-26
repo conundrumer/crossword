@@ -3,24 +3,34 @@ use test;
 use generate::Generator;
 
 #[bench]
-fn generate(b: &mut test::Bencher) {
-    b.iter(|| Generator::generate(vec![
-        "toon",
-        "took",
-        "noob",
-        "koob"
-    ], 0))
+fn generate_1(b: &mut test::Bencher) {
+    b.iter(|| {
+        let gen = Generator::new(vec![
+            "toon",
+            "took",
+            "noob",
+            "koob"
+        ], 0);
+        for cw in gen.iter() {
+            let _ = cw;
+        }
+    })
 }
 
 #[bench]
-fn generate_medium(b: &mut test::Bencher) {
-    b.iter(|| Generator::generate(vec![
-        "scent",
-        "scarf",
-        "fleet",
-        "tenet",
-        "eerie"
-    ], 0))
+fn generate_2(b: &mut test::Bencher) {
+    b.iter(|| {
+        let gen = Generator::new(vec![
+            "scent",
+            "scarf",
+            "fleet",
+            "tenet",
+            "eerie"
+        ], 0);
+        for cw in gen.iter() {
+            let _ = cw;
+        }
+    })
 }
 
 /*
@@ -40,14 +50,18 @@ fn generate_medium(b: &mut test::Bencher) {
 　ｅ
  */
 #[bench]
-#[ignore]
-fn generate_large(b: &mut test::Bencher) {
-    b.iter(|| Generator::generate(vec![
-        "monospace",
-        "aesthetics",
-        "corporate",
-        "vaporwave",
-        "crossword",
-        "unicode"
-    ], 1))
+fn generate_3(b: &mut test::Bencher) {
+    b.iter(|| {
+        let gen = Generator::new(vec![
+            "monospace",
+            "aesthetics",
+            "corporate",
+            "vaporwave",
+            "crossword",
+            "unicode"
+        ], 1);
+        for cw in gen.iter() {
+            let _ = cw;
+        }
+    })
 }

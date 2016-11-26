@@ -21,16 +21,6 @@ impl<'a> Generator<'a> {
             min_areas: RefCell::new(BinaryHeap::from(vec![std::i16::MAX; num_areas]))
         }
     }
-    // simple generator
-    pub fn generate(words: Vec<&'a str>, num_areas: usize) -> Vec<Crossword> {
-        if words.len() == 0 {
-            return vec![];
-        }
-        let gen = Generator::new(words, num_areas);
-
-        let v = gen.iter().collect();
-        v
-    }
 
     pub fn iter<'b>(&'b self) -> Box<Iterator<Item=Crossword> + 'b> {
         let mut remaining_words: Vec<_> = self.word_list.iter().cloned().map(|x| Some(x)).collect();
@@ -149,35 +139,7 @@ mod tests {
     type WordPosition = (&'static str, Position);
 
     #[test]
-    fn test_generate () {
-        let crosswords = Generator::generate(vec![
-            "ton",
-            "tok",
-            "nob",
-            "kob"
-        ], 0);
-        let (expected, _) = make_crossword(vec![
-            ("ton", Position { row: 0, col: 0, dir: Horizontal }),
-            ("tok", Position { row: 0, col: 0, dir: Vertical }),
-            ("nob", Position { row: 0, col: 2, dir: Vertical }),
-            ("kob", Position { row: 2, col: 0, dir: Horizontal })
-        ]);
-        assert_eq!(1, crosswords.len());
-        assert_eq!(4, crosswords[0].num_overlaps());
-
-        assert_eq!(expected, crosswords[0]);
-
-        let crosswords = Generator::generate(vec![
-            "toon",
-            "took",
-            "noob",
-            "koob"
-        ], 0);
-
-        assert_eq!(22, crosswords.len());
-    }
-    #[test]
-    fn test_generate_iter () {
+    fn test_gen_iter () {
         let gen = Generator::new(vec![
             "ton",
             "tok",
@@ -185,7 +147,7 @@ mod tests {
             "kob"
         ], 0);
         let crosswords: Vec<_> = gen.iter().collect();
-        let (expected, _) = make_crossword(vec![
+        let expected = make_crossword(vec![
             ("ton", Position { row: 0, col: 0, dir: Horizontal }),
             ("tok", Position { row: 0, col: 0, dir: Vertical }),
             ("nob", Position { row: 0, col: 2, dir: Vertical }),

@@ -19,7 +19,6 @@ impl Crossword {
             positions: WordPlacements::new(word_list.len()),
             grid: Grid::new(BoundingBox::new(0, 0, 0, 0))
         }
-
     }
     pub fn set(&self, word_list: &Vec<&str>, word_index: usize, pos: Position) -> Crossword {
         let word = word_list[word_index];
@@ -32,7 +31,7 @@ impl Crossword {
         self.grid.bb
     }
 
-    pub fn is_valid(&self, _word_list: &Vec<&str>) -> bool {
+    pub fn is_valid(&self) -> bool {
         self.grid.is_valid
     }
     pub fn num_overlaps(&self) -> i8 {
@@ -54,12 +53,12 @@ pub mod tests {
 
     type WordPosition = (&'static str, Position);
 
-    pub fn make_crossword(word_positions: Vec<WordPosition>) -> (Crossword, Vec<&str>) {
+    pub fn make_crossword(word_positions: Vec<WordPosition>) -> Crossword {
         let (word_list, positions): (Vec<_>, Vec<_>) = word_positions.iter().cloned().unzip();
-        (positions.into_iter().enumerate().fold(
+        positions.into_iter().enumerate().fold(
             Crossword::new(&word_list),
             |cw, (word_index, pos)| cw.set(&word_list, word_index, pos)
-        ), word_list)
+        )
     }
 
     //   0 1 2 3 4
@@ -88,21 +87,27 @@ pub mod tests {
     // 2     r
     // 3 h e l l o
     // 4     d
-    fn make_hello_world() -> (Crossword, Vec<&'static str>) {
+    fn make_hello_world() -> Crossword {
         make_crossword(vec![make_hello(), make_world()])
     }
 
     #[test]
     fn bounding_box() {
-        let (crossword, _) = make_hello_world();
+        let crossword = make_hello_world();
         let bb = crossword.bounding_box();
         assert_eq!(BoundingBox { top: 0, left: 0, bottom: 4, right: 4 }, bb);
     }
 
     #[test]
+    fn num_overlaps() {
+        let crossword = make_hello_world();
+        assert_eq!(1, crossword.num_overlaps());
+    }
+
+    #[test]
     fn to_grid() {
         let expected = "       \n   w   \n   o   \n   r   \n hello \n   d   \n       ";
-        let (crossword, _) = make_hello_world();
+        let crossword = make_hello_world();
         println!("Expected:");
         println!("{}", expected);
         println!("Actual:");
@@ -112,8 +117,8 @@ pub mod tests {
 
     #[test]
     fn is_valid() {
-        let (crossword, word_list) = make_hello_world();
-        assert!(crossword.is_valid(&word_list));
+        let crossword = make_hello_world();
+        assert!(crossword.is_valid());
     }
 
     //   0 1 2 3 4
@@ -164,8 +169,8 @@ pub mod tests {
         // 2   n
         // 3 h æ l l o
         // 4   g
-        let (invalid_crossword, word_list) = make_crossword(vec![make_hello(), make_nag()]);
-        assert!(!invalid_crossword.is_valid(&word_list));
+        let invalid_crossword = make_crossword(vec![make_hello(), make_nag()]);
+        assert!(!invalid_crossword.is_valid());
     }
 
     #[test]
@@ -177,8 +182,8 @@ pub mod tests {
         // 2     n o
         // 3 h e l l o
         // 4
-        let (adjacent_crossword, word_list) = make_crossword(vec![make_hello(), make_no()]);
-        assert!(!adjacent_crossword.is_valid(&word_list));
+        let adjacent_crossword = make_crossword(vec![make_hello(), make_no()]);
+        assert!(!adjacent_crossword.is_valid());
     }
 
     #[test]
@@ -189,8 +194,8 @@ pub mod tests {
         // 2       e
         // 3 h e l l o
         // 4
-        let (touching_crossword, word_list) = make_crossword(vec![make_hello(), make_bye()]);
-        assert!(!touching_crossword.is_valid(&word_list));
+        let touching_crossword = make_crossword(vec![make_hello(), make_bye()]);
+        assert!(!touching_crossword.is_valid());
     }
 
     #[test]
@@ -201,8 +206,8 @@ pub mod tests {
         // 2       e
         // 3 h e y
         // 4
-        let (diagonal_crossword, word_list) = make_crossword(vec![make_hey(), make_bye()]);
-        assert!(diagonal_crossword.is_valid(&word_list));
+        let diagonal_crossword = make_crossword(vec![make_hey(), make_bye()]);
+        assert!(diagonal_crossword.is_valid());
     }
 
 }
