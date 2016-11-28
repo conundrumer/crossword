@@ -111,7 +111,7 @@ impl<'a> Generator<'a> {
                     let min_area = *min_areas.iter().next_back().unwrap();
 
                     let area = next_crossword.bounding_box().area();
-                    if area < min_area {
+                    if area < min_area && !min_areas.contains(&area) {
                         min_areas.remove(&min_area);
                         min_areas.insert(area);
                     }
@@ -169,9 +169,9 @@ mod tests {
             "took",
             "noob",
             "koob"
-        ], 10);
+        ], 2);
         let crosswords: Vec<_> = gen.iter().collect();
 
-        assert_eq!(15, crosswords.len());
+        assert_eq!(11, crosswords.len());
     }
 }
