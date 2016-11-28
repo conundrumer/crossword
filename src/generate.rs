@@ -1,6 +1,6 @@
 use std;
 use std::collections::HashSet;
-use std::collections::BinaryHeap;
+use std::collections::BTreeSet;
 use std::cell::RefCell;
 use std::rc::Rc;
 
@@ -11,14 +11,16 @@ use word_placements::WordPlacements;
 pub struct Generator<'a> {
     word_list: Vec<&'a str>,
     seen: RefCell<HashSet<WordPlacements>>,
-    min_areas: RefCell<BinaryHeap<i16>>
+    min_areas: RefCell<BTreeSet<i16>>
 }
 impl<'a> Generator<'a> {
     pub fn new(words: Vec<&'a str>, num_areas: usize) -> Generator<'a> {
+        let mut min_areas = BTreeSet::new();
+        min_areas.extend((0..num_areas).map(|i| std::i16::MAX - i as i16));
         Generator {
             word_list: words.clone(),
             seen: RefCell::new(HashSet::new()),
-            min_areas: RefCell::new(BinaryHeap::from(vec![std::i16::MAX; num_areas]))
+            min_areas: RefCell::new(min_areas)
         }
     }
 
@@ -91,8 +93,8 @@ impl<'a> Generator<'a> {
                     return Some((new_word_index, next_words, next_pos))
                 }
                 let area = bb.combine_word_pos(word_list[new_word_index], next_pos).area();
-                let heap = min_areas.borrow();
-                let min_area = heap.peek().unwrap();
+                let min_areas = min_areas.borrow();
+                let min_area = min_areas.iter().next_back().unwrap();
                 if area > *min_area {
                     return None
                 }
@@ -113,10 +115,14 @@ impl<'a> Generator<'a> {
                 seen.insert(next_crossword.positions.clone());
                 if !no_min_area && num_remaining_words == 1 {
 
-                    let mut heap = min_areas.borrow_mut();
-                    let mut min_area = heap.peek_mut().unwrap();
+                    let mut min_areas = min_areas.borrow_mut();
+                    let min_area = *min_areas.iter().next_back().unwrap();
+
                     let area = next_crossword.bounding_box().area();
-                    *min_area = area;
+                    if area < min_area {
+                        min_areas.remove(&min_area);
+                        min_areas.insert(area);
+                    }
                 }
 
                 Some((next_crossword, next_words))
@@ -124,7 +130,6 @@ impl<'a> Generator<'a> {
             .flat_map(move |(next_crossword, next_words)| {
                 self.from_word_vec(next_crossword, next_words)
             }))
-
     }
 }
 
@@ -175,6 +180,6 @@ mod tests {
         ], 10);
         let crosswords: Vec<_> = gen.iter().collect();
 
-        assert_eq!(16, crosswords.len());
+        assert_eq!(15, crosswords.len());
     }
 }
