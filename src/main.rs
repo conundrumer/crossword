@@ -7,6 +7,7 @@ extern crate test;
 mod placement;
 mod word_placements;
 mod grid;
+mod grid_cell;
 mod crossword;
 mod generate;
 #[cfg(test)]
