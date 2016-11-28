@@ -7,7 +7,7 @@ use word_placements::WordPlacements;
 #[derive(Debug)]
 pub struct Crossword {
     pub positions: WordPlacements,
-    pub grid: Grid
+    grid: Grid
 }
 impl PartialEq for Crossword {
     fn eq(&self, other: &Crossword) -> bool {
@@ -21,6 +21,9 @@ impl Crossword {
             positions: WordPlacements::new(word_list.len()),
             grid: Grid::new(BoundingBox::new(0, 0, 0, 0))
         }
+    }
+    pub fn can_add_word(&self, word: &str, pos: Position) -> bool {
+        self.grid.can_add_word(word, pos)
     }
     pub fn set(&self, word_list: &Vec<&str>, word_index: usize, pos: Position) -> Crossword {
         let word = word_list[word_index];

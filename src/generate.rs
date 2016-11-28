@@ -77,7 +77,7 @@ impl<'a> Generator<'a> {
                 }
             })
             .filter_map(move |(new_word_index, next_words, next_pos)| {
-                if rc_crossword_1.grid.can_add_word(word_list[new_word_index], next_pos) {
+                if rc_crossword_1.can_add_word(word_list[new_word_index], next_pos) {
                     Some((rc_crossword_1.set(word_list, new_word_index, next_pos), next_words))
                 } else {
                     None
