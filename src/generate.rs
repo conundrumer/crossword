@@ -71,9 +71,9 @@ impl<'a> Generator<'a> {
             })
             .filter_map(move |((new_word_index, next_words), next_pos)| {
                 if filter.by_area(word_list[new_word_index], next_pos, bb) {
-                    return Some((new_word_index, next_words, next_pos))
+                    Some((new_word_index, next_words, next_pos))
                 } else {
-                    return None
+                    None
                 }
             })
             .filter_map(move |(new_word_index, next_words, next_pos)| {
@@ -140,9 +140,9 @@ mod tests {
             "took",
             "noob",
             "koob"
-        ], 2);
+        ], 1);
         let crosswords: Vec<_> = gen.iter().collect();
 
-        assert_eq!(11, crosswords.len());
+        assert_eq!(10, crosswords.len());
     }
 }

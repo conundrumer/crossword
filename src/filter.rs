@@ -8,11 +8,79 @@ use placement::Position;
 use bounding_box::BoundingBox;
 use word_placements::WordPlacements;
 use crossword::Crossword;
+#[derive(Debug)]
+struct OverlapAreas {
+    overlap_areas: RefCell<Vec<RefCell<BTreeSet<i16>>>>,
+    max_area: Cell<(i8, i16)>,
+    num_areas: usize
+}
+impl OverlapAreas {
+    fn new(num_areas: usize) -> OverlapAreas {
+        OverlapAreas {
+            overlap_areas: RefCell::new(vec![]),
+            max_area: Cell::new((0, MAX)),
+            num_areas: num_areas
+        }
+    }
+    fn get_max_area(&self) -> i16 {
+        self.max_area.get().1
+    }
+    fn reset_max_area(&self, overlaps: i8, area: i16) {
+        let max_area = self.overlap_areas.borrow().iter().enumerate().fold(
+            (overlaps, area),
+            |(prev_overlaps, prev_area), (overlaps, cell_areas)| {
+                if let Some(area) = cell_areas.borrow().last() {
+                    if area > prev_area {
+                        return (overlaps as i8, area)
+                    }
+                }
+                (prev_overlaps, prev_area)
+            }
+        );
+        self.max_area.set(max_area);
+    }
+    fn extend_if_needed(&self, overlaps: i8) {
+        let overlaps = overlaps as usize;
+        let overlap_areas_len = self.overlap_areas.borrow().len();
+        if overlaps >= overlap_areas_len {
+            let mut overlap_areas = self.overlap_areas.borrow_mut();
+            overlap_areas.extend((overlap_areas_len..overlaps + 1).map(|_| RefCell::new(BTreeSet::new())));
+        }
+    }
+    fn filter_by_area(&self, overlaps: i8, area: i16) -> bool {
+        let mut should_reset = false;
+        {
+            self.extend_if_needed(overlaps);
+            let overlap_areas =  self.overlap_areas.borrow();
+            let mut areas = overlap_areas[overlaps as usize].borrow_mut();
+            if let Some(last_area) = areas.last() {
+                if area > last_area {
+                    return false;
+                }
+                if area < last_area && !areas.contains(&area) {
+                    if areas.len() == self.num_areas {
+                        areas.remove(&last_area);
+                    }
+                    areas.insert(area);
+                    let (max_area_overlaps, max_area) = self.max_area.get();
+                    should_reset = overlaps == max_area_overlaps && area < max_area;
+                }
+            } else {
+                areas.insert(area);
+                should_reset = true;
+            }
+        }
+        if should_reset {
+            self.reset_max_area(overlaps, area);
+        }
+        true
+    }
+}
 
+#[derive(Debug)]
 pub struct Filter {
-    pub seen: RefCell<HashSet<WordPlacements>>,
-    pub min_areas: RefCell<BTreeSet<i16>>,
-    min_area: Cell<i16>,
+    seen: RefCell<HashSet<WordPlacements>>,
+    overlap_areas: OverlapAreas,
     has_min_areas: bool
 }
 trait CollectionWithLast<T> {
@@ -25,12 +93,9 @@ impl<T: Copy> CollectionWithLast<T> for BTreeSet<T> {
 }
 impl Filter {
     pub fn new(num_areas: usize) -> Filter {
-        let mut min_areas = BTreeSet::new();
-        min_areas.extend((0..num_areas).map(|i| MAX - i as i16));
         Filter {
             seen: RefCell::new(HashSet::new()),
-            min_areas: RefCell::new(min_areas),
-            min_area: Cell::new(MAX),
+            overlap_areas: OverlapAreas::new(num_areas),
             has_min_areas: num_areas > 0
         }
     }
@@ -42,7 +107,7 @@ impl Filter {
             return true
         }
         let area = bb.combine_word_pos(word, next_pos).area();
-        area <= self.min_area.get()
+        area <= self.overlap_areas.get_max_area()
     }
     pub fn by_seen(&self, crossword: &Crossword, num_remaining_words: usize) -> bool {
         {
@@ -53,15 +118,11 @@ impl Filter {
             seen.insert(crossword.positions.clone());
         }
         if self.has_min_areas && num_remaining_words == 1 {
-            let min_area = self.min_area.get();
-            let mut min_areas = self.min_areas.borrow_mut();
-
             let area = crossword.bounding_box().area();
-            if area < min_area && !min_areas.contains(&area) {
-                min_areas.remove(&min_area);
-                min_areas.insert(area);
-                self.min_area.set(min_areas.last().unwrap());
-            }
+            let overlaps = crossword.num_overlaps();
+
+            let out = self.overlap_areas.filter_by_area(overlaps, area);
+            return out
         }
         true
     }
