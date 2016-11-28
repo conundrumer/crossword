@@ -1,6 +1,17 @@
 use placement::{ Position, Direction };
 use placement::Direction::{ Horizontal, Vertical };
 
+type GridCellPos = (GridCell, (i8, i8));
+fn block_dir(dir: Direction, row: i8, col: i8) -> impl Iterator<Item=GridCellPos> {
+    Some((Block(Some(dir)), (row, col))).into_iter()
+}
+fn block_none(row: i8, col: i8) -> impl Iterator<Item=GridCellPos> {
+    Some((Block(None), (row, col))).into_iter()
+}
+fn letter(c: char, dir: Direction, row: i8, col: i8) -> impl Iterator<Item=GridCellPos> {
+    Some((Letter(c, Some(dir)), (row, col))).into_iter()
+}
+
 #[derive(Debug, Copy, Clone, PartialEq)]
 pub enum GridCell {
     Empty,
@@ -11,7 +22,7 @@ pub enum GridCell {
 use self::GridCell::*;
 impl GridCell {
 
-    pub fn from_word<'a>(word: &'a str, pos: Position) -> impl Iterator<Item=(GridCell, (i8, i8))> + 'a {
+    pub fn from_word<'a>(word: &'a str, pos: Position) -> impl Iterator<Item=GridCellPos> + 'a {
         let letter_iter = word.chars().enumerate()
             .map(move |(j, c)| {
                 (pos.letter_pos(j as i8), c)
@@ -21,16 +32,16 @@ impl GridCell {
                     Horizontal => ((pos.row - 1, pos.col), (pos.row + 1, pos.col)),
                     Vertical => ((pos.row, pos.col - 1), (pos.row, pos.col + 1))
                 };
-                let cell1 = (Block(Some(pos.dir)), (row1, col1));
-                let cell2 = (Letter(c, Some(pos.dir)), (pos.row, pos.col));
-                let cell3 = (Block(Some(pos.dir)), (row2, col2));
-                Some(cell1).into_iter().chain(Some(cell2).into_iter()).chain(Some(cell3).into_iter())
+                let cell1 = block_dir(pos.dir, row1, col1);
+                let cell2 = letter(c, pos.dir, pos.row, pos.col);
+                let cell3 = block_dir(pos.dir, row2, col2);
+                cell1.chain(cell2).chain(cell3)
             });
         let start_pos = pos.letter_pos(-1);
         let end_pos = pos.letter_pos(word.len() as i8);
-        let start_cell = (Block(None), (start_pos.row, start_pos.col));
-        let end_cell = (Block(None), (end_pos.row, end_pos.col));
-        Some(start_cell).into_iter().chain(letter_iter).chain(Some(end_cell).into_iter())
+        let start_cell = block_none(start_pos.row, start_pos.col);
+        let end_cell = block_none(end_pos.row, end_pos.col);
+        start_cell.chain(letter_iter).chain(end_cell)
     }
 
     pub fn get_next(self, cell: GridCell) -> GridCell {
