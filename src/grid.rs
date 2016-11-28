@@ -93,21 +93,26 @@ impl Grid {
 // use placement::Direction::{Horizontal, Vertical};
 impl Display for Grid {
     fn fmt(&self, f: &mut Formatter) -> Result {
-        for (i, entry) in self.grid.iter().enumerate() {
-            match *entry {
-                // Empty => try!(write!(f, " ")),
-                // Block(Some(Horizontal)) => try!(write!(f, "-")),
-                // Block(Some(Vertical)) => try!(write!(f, "|")),
-                // Block(None) => try!(write!(f, "+")),
-                // Letter(_, Some(Horizontal)) => try!(write!(f, "-")),
-                // Letter(_, Some(Vertical)) => try!(write!(f, "|")),
-                // Letter(_, None) => try!(write!(f, "+")),
-                Empty | Block(_) => try!(write!(f, " ")),
-                Letter(c, _) => try!(write!(f, "{}", c)),
-                Collision => try!(write!(f, "*"))
-            }
-            if i != self.grid.len() - 1 && (i + 1) % (self.bb.width() as usize) == 0 {
-                try!(write!(f, "\n"))
+        let bb = self.bb.contract();
+        for row in bb.top .. bb.bottom + 1 {
+            for col in bb.left .. bb.right + 1 {
+                let row_col = self.bb.row_col(row, col);
+                let cell = self.grid[row_col];
+                match cell {
+                    // Empty => write!(f, " ")?,
+                    // Block(Some(Horizontal)) => write!(f, "-")?,
+                    // Block(Some(Vertical)) => write!(f, "|")?,
+                    // Block(None) => write!(f, "+")?,
+                    // Letter(_, Some(Horizontal)) => write!(f, "-")?,
+                    // Letter(_, Some(Vertical)) => write!(f, "|")?,
+                    // Letter(_, None) => write!(f, "+")?,
+                    Empty | Block(_) => write!(f, " ")?,
+                    Letter(c, _) => write!(f, "{}", c)?,
+                    Collision => write!(f, "*")?
+                }
+                if col == bb.right && row != bb.bottom  {
+                    write!(f, "\n")?
+                }
             }
         }
         write!(f, "")

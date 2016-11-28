@@ -126,8 +126,8 @@ pub mod tests {
     }
 
     #[test]
-    fn to_grid() {
-        let expected = "       \n   w   \n   o   \n   r   \n hello \n   d   \n       ";
+    fn display() {
+        let expected = include_str!("test_crossword_display.txt");
         let crossword = make_hello_world();
         println!("Expected:");
         println!("{}", expected);
