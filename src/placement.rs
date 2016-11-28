@@ -81,6 +81,19 @@ impl BoundingBox {
     pub fn combine_word_pos(&self, word: &str, pos: Position) -> BoundingBox {
         self.combine(BoundingBox::from_word_pos(word, pos))
     }
+    pub fn row_col(&self, row: i8, col: i8) -> usize {
+        let row = (row - self.top) as usize;
+        let col = (col - self.left) as usize;
+        let width = self.width() as usize;
+        width * row + col
+    }
+    pub fn row_col_inverse(&self, i: usize) -> (i8, i8) {
+        let i = i as i16;
+        let top = self.top as i16;
+        let left = self.left as i16;
+        let width = self.width() as i16;
+        ((i / width + top) as i8, (i % width + left) as i8)
+    }
     pub fn width(&self) -> i16 {
         self.right as i16 - self.left as i16 + 1
     }

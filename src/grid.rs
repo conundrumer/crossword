@@ -23,32 +23,13 @@ impl Grid {
     fn make_grid(bb: BoundingBox) -> Vec<GridCell> {
         vec![Empty; ((bb.width() as usize) * (bb.height() as usize))]
     }
-    fn row(&self, row: i8) -> i8 {
-        row - self.bb.top
-    }
-    fn col(&self, col: i8) -> i8 {
-        col - self.bb.left
-    }
-    fn row_col(&self, row: i8, col: i8) -> usize {
-        let row = self.row(row) as usize;
-        let col = self.col(col) as usize;
-        let width = self.bb.width() as usize;
-        width * row + col
-    }
-    fn row_col_inverse(&self, i: usize) -> (i8, i8) {
-        let i = i as i16;
-        let top = self.bb.top as i16;
-        let left = self.bb.left as i16;
-        let actual_width = self.bb.width() as i16;
-        ((i / actual_width + top) as i8, (i % actual_width + left) as i8)
-    }
     pub fn set(&self, word: &str, pos: Position) -> Grid {
         let bb = self.bb.combine(BoundingBox::from_word_pos(word, pos).expand());
         let mut new = Grid::new(bb);
         new.num_overlaps = self.num_overlaps;
         for (i, &cell) in self.grid.iter().enumerate() {
-            let (row, col) = self.row_col_inverse(i);
-            let row_col = new.row_col(row, col);
+            let (row, col) = self.bb.row_col_inverse(i);
+            let row_col = new.bb.row_col(row, col);
             new.grid[row_col] = cell
 
         }
@@ -58,12 +39,10 @@ impl Grid {
     }
     pub fn can_add_word(&self, word: &str, pos: Position) -> bool {
         GridCell::from_word(word, pos).all(|(cell, (row, col))| {
-            let grid_row = self.row(row);
-            let grid_col = self.col(col);
-            if grid_row < 0 || grid_col < 0 {
+            if row < self.bb.top || col < self.bb.left {
                 return true
             }
-            let row_col = self.row_col(row, col);
+            let row_col = self.bb.row_col(row, col);
             if row_col >= self.grid.len() {
                 return true
             }
@@ -75,7 +54,7 @@ impl Grid {
     }
     pub fn add_word(&mut self, word: &str, pos: Position) -> bool {
         GridCell::from_word(word, pos).any(|(cell, (row, col))| {
-            let row_col = self.row_col(row, col);
+            let row_col = self.bb.row_col(row, col);
             let old_cell = self.grid[row_col];
             let next_cell = old_cell.get_next(cell);
             if let Letter(_, None) = next_cell {
