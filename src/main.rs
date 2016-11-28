@@ -5,6 +5,7 @@
 extern crate test;
 
 mod placement;
+mod bounding_box;
 mod word_placements;
 mod grid;
 mod grid_cell;

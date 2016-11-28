@@ -1,6 +1,7 @@
 use std::fmt::{Display, Formatter, Result};
 
-use placement::{ Position, BoundingBox };
+use placement::Position;
+use bounding_box::BoundingBox;
 use grid_cell::GridCell;
 use grid_cell::GridCell::*;
 

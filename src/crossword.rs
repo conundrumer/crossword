@@ -1,5 +1,7 @@
-use placement::{ Position, BoundingBox };
-use grid::{ Grid };
+use placement::Position;
+use bounding_box::BoundingBox;
+
+use grid::Grid;
 use word_placements::WordPlacements;
 
 #[derive(Debug)]
@@ -48,7 +50,8 @@ impl Display for Crossword {
 #[cfg(test)]
 pub mod tests {
     use super::*;
-    use placement::{ Position, BoundingBox };
+    use placement::Position;
+    use bounding_box::BoundingBox;
     use placement::Direction::{ Horizontal, Vertical };
 
     type WordPosition = (&'static str, Position);

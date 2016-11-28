@@ -4,8 +4,8 @@ use std::collections::BTreeSet;
 use std::cell::RefCell;
 use std::rc::Rc;
 
-use crossword::{ Crossword };
-use placement::{ START_POSITION };
+use crossword::Crossword;
+use placement::START_POSITION;
 use word_placements::WordPlacements;
 
 pub struct Generator<'a> {
