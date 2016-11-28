@@ -14,7 +14,7 @@ impl WordPlacements {
         next_self
     }
     pub fn index_positions<'a>(&'a self) -> Box<Iterator<Item=(usize, Position)>> {
-        Box::new(self.0.clone().into_iter().enumerate().flat_map(|(word_index, opt_pos)| opt_pos.map(|pos| (word_index, pos))))
+        Box::new(self.0.clone().into_iter().enumerate().filter_map(|(word_index, opt_pos)| opt_pos.map(|pos| (word_index, pos))))
     }
 }
 

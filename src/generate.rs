@@ -1,32 +1,23 @@
-use std;
-use std::collections::HashSet;
-use std::collections::BTreeSet;
-use std::cell::RefCell;
 use std::rc::Rc;
 
 use crossword::Crossword;
 use placement::START_POSITION;
-use word_placements::WordPlacements;
+use filter::Filter;
 
 pub struct Generator<'a> {
     word_list: Vec<&'a str>,
-    seen: RefCell<HashSet<WordPlacements>>,
-    min_areas: RefCell<BTreeSet<i16>>
+    filter: Filter
 }
 impl<'a> Generator<'a> {
     pub fn new(words: Vec<&'a str>, num_areas: usize) -> Generator<'a> {
-        let mut min_areas = BTreeSet::new();
-        min_areas.extend((0..num_areas).map(|i| std::i16::MAX - i as i16));
         Generator {
             word_list: words.clone(),
-            seen: RefCell::new(HashSet::new()),
-            min_areas: RefCell::new(min_areas)
+            filter: Filter::new(num_areas)
         }
     }
 
     pub fn num_seen(&self) -> usize {
-        let seen = self.seen.borrow();
-        seen.len()
+        self.filter.num_seen()
     }
 
     pub fn iter<'b>(&'b self) -> Box<Iterator<Item=Crossword> + 'b> {
@@ -42,18 +33,16 @@ impl<'a> Generator<'a> {
         if num_remaining_words == 0 {
             return Box::new(Some(crossword).into_iter());
         }
-        let no_min_area = self.min_areas.borrow().len() == 0;
         let &Generator {
             ref word_list,
-            ref seen,
-            ref min_areas
+            ref filter
         } = self;
         let bb = crossword.bounding_box();
         let rc_crossword_1 = Rc::new(crossword);
         let rc_crossword_2 = rc_crossword_1.clone();
         let cloned_words = (*words).clone();
         Box::new(cloned_words.into_iter().enumerate()
-            .flat_map(|(new_word_index, opt_word)| {
+            .filter_map(|(new_word_index, opt_word)| {
                 opt_word.map(|new_word| {
                     (new_word_index, new_word)
                 })
@@ -73,51 +62,33 @@ impl<'a> Generator<'a> {
                     ((new_word_index, next_words.clone()), char1, (i2, c2))
                 })
             })
-            .flat_map(|(w, (c1, pos), (i2, c2))| {
+            .filter_map(|(w, (c1, pos), (i2, c2))| {
                 if c1 != c2 {
                     return None
                 }
                 let next_pos = pos.from_offset(i2 as i8);
                 Some((w, next_pos))
             })
-            .flat_map(move |((new_word_index, next_words), next_pos)| {
-                if no_min_area {
+            .filter_map(move |((new_word_index, next_words), next_pos)| {
+                if filter.by_area(word_list[new_word_index], next_pos, bb) {
                     return Some((new_word_index, next_words, next_pos))
-                }
-                let area = bb.combine_word_pos(word_list[new_word_index], next_pos).area();
-                let min_areas = min_areas.borrow();
-                let min_area = min_areas.iter().next_back().unwrap();
-                if area > *min_area {
+                } else {
                     return None
                 }
-                Some((new_word_index, next_words, next_pos))
             })
-            .flat_map(move |(new_word_index, next_words, next_pos)| {
+            .filter_map(move |(new_word_index, next_words, next_pos)| {
                 if rc_crossword_1.grid.can_add_word(word_list[new_word_index], next_pos) {
                     Some((rc_crossword_1.set(word_list, new_word_index, next_pos), next_words))
                 } else {
                     None
                 }
             })
-            .flat_map(move |(next_crossword, next_words)| {
-                let mut seen = &mut seen.borrow_mut();
-                if seen.contains(&next_crossword.positions) {
-                    return None
+            .filter_map(move |(next_crossword, next_words)| {
+                if filter.by_seen(&next_crossword, num_remaining_words) {
+                    Some((next_crossword, next_words))
+                } else {
+                    None
                 }
-                seen.insert(next_crossword.positions.clone());
-                if !no_min_area && num_remaining_words == 1 {
-
-                    let mut min_areas = min_areas.borrow_mut();
-                    let min_area = *min_areas.iter().next_back().unwrap();
-
-                    let area = next_crossword.bounding_box().area();
-                    if area < min_area && !min_areas.contains(&area) {
-                        min_areas.remove(&min_area);
-                        min_areas.insert(area);
-                    }
-                }
-
-                Some((next_crossword, next_words))
             })
             .flat_map(move |(next_crossword, next_words)| {
                 self.from_word_vec(next_crossword, next_words)
