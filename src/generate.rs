@@ -24,6 +24,11 @@ impl<'a> Generator<'a> {
         }
     }
 
+    pub fn num_seen(&self) -> usize {
+        let seen = self.seen.borrow();
+        seen.len()
+    }
+
     pub fn iter<'b>(&'b self) -> Box<Iterator<Item=Crossword> + 'b> {
         let mut remaining_words: Vec<_> = self.word_list.iter().cloned().map(|x| Some(x)).collect();
         remaining_words[0] = None;
