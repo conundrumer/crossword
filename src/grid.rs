@@ -90,6 +90,7 @@ impl Grid {
     }
 }
 
+// use placement::Direction::{Horizontal, Vertical};
 impl Display for Grid {
     fn fmt(&self, f: &mut Formatter) -> Result {
         for (i, entry) in self.grid.iter().enumerate() {
@@ -98,6 +99,9 @@ impl Display for Grid {
                 // Block(Some(Horizontal)) => try!(write!(f, "-")),
                 // Block(Some(Vertical)) => try!(write!(f, "|")),
                 // Block(None) => try!(write!(f, "+")),
+                // Letter(_, Some(Horizontal)) => try!(write!(f, "-")),
+                // Letter(_, Some(Vertical)) => try!(write!(f, "|")),
+                // Letter(_, None) => try!(write!(f, "+")),
                 Empty | Block(_) => try!(write!(f, " ")),
                 Letter(c, _) => try!(write!(f, "{}", c)),
                 Collision => try!(write!(f, "*"))

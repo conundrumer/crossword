@@ -145,4 +145,16 @@ mod tests {
 
         assert_eq!(10, crosswords.len());
     }
+
+    #[test]
+    fn letter_block_collision() {
+        let gen = Generator::new(vec![
+            "1A",
+            "B1B2",
+            "4CC3",
+            "4DD",
+            "3EE2",
+        ], 0);
+        assert_eq!(0, gen.iter().count());
+    }
 }

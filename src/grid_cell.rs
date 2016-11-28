@@ -63,7 +63,7 @@ impl GridCell {
             (Letter(c, opt_o1 @ _), Block(opt_o2 @ _)) | (Block(opt_o2 @ _), Letter(c, opt_o1 @ _)) => {
                 match (opt_o1, opt_o2) {
                     (Some(o1), Some(o2)) if o1 != o2 => Letter(c, None),
-                    (None, _) => Letter(c, None),
+                    (None, Some(_)) => Letter(c, None),
                     _ => Collision
                 }
             },
@@ -72,5 +72,18 @@ impl GridCell {
                 _ => unreachable!()
             }
         }
+    }
+}
+
+
+#[cfg(test)]
+pub mod tests {
+    use super::*;
+
+    #[test]
+    fn letter_block_collision() {
+        let letter = Letter('x', None);
+        let block = Block(None);
+        assert_eq!(Collision, letter.get_next(block));
     }
 }
