@@ -78,31 +78,34 @@ impl Grid {
         Grid {
             is_valid: true,
             num_overlaps: 0,
-            grid: vec![Empty; ((2 + bb.width() as usize) * (2 + bb.height()) as usize)],
+            grid: Grid::make_grid(bb),
             bb: bb
         }
     }
+    fn make_grid(bb: BoundingBox) -> Vec<GridCell> {
+        vec![Empty; ((bb.width() as usize) * (bb.height() as usize))]
+    }
     fn row(&self, row: i8) -> i8 {
-        (row - self.bb.top + 1)
+        row - self.bb.top
     }
     fn col(&self, col: i8) -> i8 {
-        (col - self.bb.left + 1)
+        col - self.bb.left
     }
     fn row_col(&self, row: i8, col: i8) -> usize {
         let row = self.row(row) as usize;
         let col = self.col(col) as usize;
         let width = self.bb.width() as usize;
-        (2 + width) * row + col
+        width * row + col
     }
     fn row_col_inverse(&self, i: usize) -> (i8, i8) {
         let i = i as i16;
         let top = self.bb.top as i16;
         let left = self.bb.left as i16;
-        let actual_width = 2 + self.bb.width() as i16;
-        ((i / actual_width + top - 1) as i8, (i % actual_width + left - 1) as i8)
+        let actual_width = self.bb.width() as i16;
+        ((i / actual_width + top) as i8, (i % actual_width + left) as i8)
     }
     pub fn set(&self, word: &str, pos: Position) -> Grid {
-        let bb = self.bb.combine(BoundingBox::from_word_pos(word, pos));
+        let bb = self.bb.combine(BoundingBox::from_word_pos(word, pos).expand());
         let mut new = Grid::new(bb);
         new.num_overlaps = self.num_overlaps;
         for (i, &cell) in self.grid.iter().enumerate() {
@@ -151,14 +154,14 @@ impl Display for Grid {
         for (i, entry) in self.grid.iter().enumerate() {
             match *entry {
                 // Empty => try!(write!(f, " ")),
-                // Block(Some(Horizontal)) => try!(write!(f, "─")),
-                // Block(Some(Vertical)) => try!(write!(f, "│")),
-                // Block(None) => try!(write!(f, "┼")),
+                // Block(Some(Horizontal)) => try!(write!(f, "-")),
+                // Block(Some(Vertical)) => try!(write!(f, "|")),
+                // Block(None) => try!(write!(f, "+")),
                 Empty | Block(_) => try!(write!(f, " ")),
                 Letter(c, _) => try!(write!(f, "{}", c)),
                 Collision => try!(write!(f, "*"))
             }
-            if i != self.grid.len() - 1 && (i + 1) % (2 + self.bb.width() as usize) == 0 {
+            if i != self.grid.len() - 1 && (i + 1) % (self.bb.width() as usize) == 0 {
                 try!(write!(f, "\n"))
             }
         }

@@ -72,6 +72,12 @@ impl BoundingBox {
             max(self.right, other.right)
         )
     }
+    pub fn expand(&self) -> BoundingBox {
+        BoundingBox::new(self.top - 1, self.left - 1, self.bottom + 1, self.right + 1)
+    }
+    pub fn contract(&self) -> BoundingBox {
+        BoundingBox::new(self.top + 1, self.left + 1, self.bottom - 1, self.right - 1)
+    }
     pub fn combine_word_pos(&self, word: &str, pos: Position) -> BoundingBox {
         self.combine(BoundingBox::from_word_pos(word, pos))
     }

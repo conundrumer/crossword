@@ -28,7 +28,7 @@ impl Crossword {
         }
     }
     pub fn bounding_box(&self) -> BoundingBox {
-        self.grid.bb
+        self.grid.bb.contract()
     }
 
     pub fn is_valid(&self) -> bool {
