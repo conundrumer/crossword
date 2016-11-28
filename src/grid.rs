@@ -10,6 +10,7 @@ pub struct Grid {
     pub is_valid: bool,
     pub num_overlaps: i8,
     grid: Vec<GridCell>,
+    pub letters: Vec<(char, Position)>,
     pub bb: BoundingBox
 }
 impl Grid {
@@ -18,6 +19,7 @@ impl Grid {
             is_valid: true,
             num_overlaps: 0,
             grid: Grid::make_grid(bb),
+            letters: vec![],
             bb: bb
         }
     }
@@ -26,17 +28,50 @@ impl Grid {
     }
     pub fn set(&self, word: &str, pos: Position) -> Grid {
         let bb = self.bb.combine(BoundingBox::from_word_pos(word, pos).expand());
-        let mut new = Grid::new(bb);
-        new.num_overlaps = self.num_overlaps;
+        let mut grid = Grid::make_grid(bb);
+        let mut letters = self.letters.clone();
+        let mut is_valid = self.is_valid;
+        let mut num_overlaps = self.num_overlaps;
+        // copy old cells to new grid
         for (i, &cell) in self.grid.iter().enumerate() {
             let (row, col) = self.bb.row_col_inverse(i);
-            let row_col = new.bb.row_col(row, col);
-            new.grid[row_col] = cell
-
+            let row_col = bb.row_col(row, col);
+            grid[row_col] = cell
         }
-        let collided = new.add_word(word, pos);
-        new.is_valid = !collided && new.is_valid;
-        new
+        // add word and check for collisions and overlaps and letter additions/removals
+        for  (cell, (row, col)) in GridCell::from_word(word, pos) {
+            let row_col = bb.row_col(row, col);
+            let old_cell = grid[row_col];
+            let next_cell = old_cell.get_next(cell);
+            grid[row_col] = next_cell;
+            match next_cell {
+                Letter(c, Some(dir)) => {
+                    // add letter
+                    letters.push((c, Position {row: row, col: col, dir: dir}));
+                },
+                Letter(_, None) => if let Letter(_, _) = old_cell {
+                    // remove letter
+                    letters.iter()
+                        .position(|&(_, pos)| (pos.row, pos.col) == (row, col) )
+                        .map(|i| letters.remove(i));
+                    if let Letter(_, _) = cell {
+                        // add overlap
+                        num_overlaps += 1;
+                    }
+                },
+                Collision => {
+                    is_valid = false
+                },
+                _ => {}
+            }
+        }
+        Grid {
+            is_valid: is_valid,
+            num_overlaps: num_overlaps,
+            grid: grid,
+            letters: letters,
+            bb: bb
+        }
     }
     pub fn can_add_word(&self, word: &str, pos: Position) -> bool {
         GridCell::from_word(word, pos).all(|(cell, (row, col))| {
@@ -52,18 +87,6 @@ impl Grid {
             next_cell != Collision
         })
 
-    }
-    pub fn add_word(&mut self, word: &str, pos: Position) -> bool {
-        GridCell::from_word(word, pos).any(|(cell, (row, col))| {
-            let row_col = self.bb.row_col(row, col);
-            let old_cell = self.grid[row_col];
-            let next_cell = old_cell.get_next(cell);
-            if let Letter(_, None) = next_cell {
-                self.num_overlaps += 1;
-            }
-            self.grid[row_col] = next_cell;
-            next_cell == Collision
-        })
     }
 }
 

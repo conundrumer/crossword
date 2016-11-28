@@ -39,6 +39,9 @@ impl Crossword {
     pub fn num_overlaps(&self) -> i8 {
         self.grid.num_overlaps
     }
+    pub fn letters(&self) -> &Vec<(char, Position)> {
+        &self.grid.letters
+    }
 }
 use std::fmt::{Display, Formatter, Result};
 impl Display for Crossword {
@@ -105,6 +108,18 @@ pub mod tests {
     fn num_overlaps() {
         let crossword = make_hello_world();
         assert_eq!(1, crossword.num_overlaps());
+    }
+
+    #[test]
+    fn letters() {
+        let crossword = make_crossword(vec![make_hello()]);
+        assert_eq!(5, crossword.letters().len());
+
+        let crossword = make_hello_world();
+        for l in crossword.letters() {
+            println!("{:?}", l);
+        }
+        assert_eq!(4, crossword.letters().len());
     }
 
     #[test]

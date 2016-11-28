@@ -51,7 +51,7 @@ impl GridCell {
             },
             (Letter(c, opt_o1 @ _), Block(opt_o2 @ _)) | (Block(opt_o2 @ _), Letter(c, opt_o1 @ _)) => {
                 match (opt_o1, opt_o2) {
-                    (Some(o1), Some(o2)) if o1 != o2 => Letter(c, Some(o1)),
+                    (Some(o1), Some(o2)) if o1 != o2 => Letter(c, None),
                     (None, _) => Letter(c, None),
                     _ => Collision
                 }

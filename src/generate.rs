@@ -65,28 +65,15 @@ impl<'a> Generator<'a> {
                 (new_word, new_word_index, next_words)
             })
             .flat_map(move |w| {
-                rc_crossword_2.positions.index_positions()
-                    .map(move |(word_index, word_pos)| {
-                        let word = word_list[word_index];
-                        (word, word_pos)
-                    })
-                    .map(move |(word, word_pos)| {
-                        (w.clone(), (word, word_pos))
-                    })
-            })
-            .flat_map(|(w, (word, word_pos))| {
-                word.chars().enumerate()
-                    .map(move |(i1, c1)| {
-                        let pos = word_pos.letter_pos(i1 as i8);
-                        (w.clone(), (pos, c1))
-                    })
+                rc_crossword_2.letters().clone().into_iter()
+                    .map(move |char1| (w.clone(), char1))
             })
             .flat_map(|((new_word, new_word_index, next_words), char1)| {
                 new_word.chars().enumerate().map(move |(i2, c2)| {
                     ((new_word_index, next_words.clone()), char1, (i2, c2))
                 })
             })
-            .flat_map(|(w, (pos, c1), (i2, c2))| {
+            .flat_map(|(w, (c1, pos), (i2, c2))| {
                 if c1 != c2 {
                     return None
                 }
