@@ -95,6 +95,17 @@ impl<'a> Generator<'a> {
             }))
     }
 }
+use std::fmt::{Display, Formatter, Result};
+impl<'a> Display for Generator<'a> {
+    fn fmt(&self, f: &mut Formatter) -> Result {
+        write!(f, "word_list:\n")?;
+        for word in &self.word_list {
+            write!(f, "  - {}\n", word)?;
+        }
+        write!(f, "num_areas: {}", self.filter.num_areas())?;
+        write!(f, "\n")
+    }
+}
 
 #[cfg(test)]
 mod tests {
@@ -105,6 +116,17 @@ mod tests {
     use crossword::tests::make_crossword;
 
     type WordPosition = (&'static str, Position);
+
+    #[test]
+    fn display() {
+        let gen = Generator::new(vec![
+            "hello",
+            "world"
+        ], 0);
+        
+        let expected = include_str!("test_generator_display.yaml");
+        assert_eq!(expected, format!("{}", gen));
+    }
 
     #[test]
     fn test_gen_iter () {

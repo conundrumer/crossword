@@ -12,7 +12,7 @@ use crossword::Crossword;
 struct OverlapAreas {
     overlap_areas: RefCell<Vec<RefCell<BTreeSet<i16>>>>,
     max_area: Cell<(i8, i16)>,
-    num_areas: usize
+    pub num_areas: usize
 }
 impl OverlapAreas {
     fn new(num_areas: usize) -> OverlapAreas {
@@ -98,6 +98,9 @@ impl Filter {
             overlap_areas: OverlapAreas::new(num_areas),
             has_min_areas: num_areas > 0
         }
+    }
+    pub fn num_areas(&self) -> usize {
+        self.overlap_areas.num_areas
     }
     pub fn num_seen(&self) -> usize {
         self.seen.borrow().len()
