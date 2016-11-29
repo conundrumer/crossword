@@ -55,49 +55,35 @@ impl Display for Crossword {
         let is_landscape = width > height;
         let (width, height) = if is_landscape { (height, width) } else { (width, height) };
 
-        let write_attributes = |f: &mut Formatter| {
-            writeln!(f, "[{}]:", self.positions)?;
-            writeln!(f, "  width: {}", width)?;
-            writeln!(f, "  height: {}", height)?;
-            writeln!(f, "  area: {}", width * height)?;
-            writeln!(f, "  overlaps: {}", self.num_overlaps())
-        };
-        let write_entry = |f: &mut Formatter, entry| {
-            if let Some(cell) = entry {
-                write!(f, "{}", cell)
-            } else {
-                writeln!(f, "")?;
-                write!(f, "    ")
-            }
-        };
-        let write_rows = |f: &mut Formatter| {
-            writeln!(f, "  portrait: |")?;
-            writeln!(f, "    .")?;
-            write!(f, "    ")?;
-            for entry in self.grid.iter_rows() {
-                write_entry(f, entry)?;
-            }
-            writeln!(f, "")
-        };
-        let write_cols = |f: &mut Formatter| {
-            writeln!(f, "  landscape: |")?;
-            writeln!(f, "    .")?;
-            write!(f, "    ")?;
-            for entry in self.grid.iter_cols() {
-                write_entry(f, entry)?;
-            }
-            writeln!(f, "")
-        };
-        write_attributes(f)?;
+        writeln!(f, "[{}]:", self.positions)?;
+        writeln!(f, "  width: {}", width)?;
+        writeln!(f, "  height: {}", height)?;
+        writeln!(f, "  area: {}", width * height)?;
+        writeln!(f, "  overlaps: {}", self.num_overlaps())?;
+
         if is_landscape {
-            write_cols(f)?;
-            write_rows(f)?;
+            write_grid(f, "portrait", self.grid.iter_cols())?;
+            write_grid(f, "landscape", self.grid.iter_rows())
         } else {
-            write_rows(f)?;
-            write_cols(f)?;
+            write_grid(f, "portrait", self.grid.iter_rows())?;
+            write_grid(f, "landscape", self.grid.iter_cols())
         }
-        write!(f, "")
     }
+}
+fn write_grid<T, U>(f: &mut Formatter, key_name: &str, iter: T) -> Result
+    where T: Iterator<Item=Option<U>>, U: Display {
+    writeln!(f, "  {}: |", key_name)?;
+    writeln!(f, "    .")?;
+    write!(f, "    ")?;
+    for entry in iter {
+        if let Some(cell) = entry {
+            write!(f, "{}", cell)?;
+        } else {
+            writeln!(f, "")?;
+            write!(f, "    ")?;
+        }
+    }
+    writeln!(f, "")
 }
 
 #[cfg(test)]
