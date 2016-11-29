@@ -42,3 +42,13 @@ impl Position {
     }
 }
 pub const START_POSITION: Position = Position { row: 0, col: 0, dir: Horizontal };
+
+use std::fmt::{Display, Formatter, Result};
+impl Display for Position {
+    fn fmt(&self, f: &mut Formatter) -> Result {
+        write!(f, "{},{},{}", self.row, self.col, match self.dir {
+            Horizontal => 'H',
+            Vertical => 'V'
+        })
+    }
+}

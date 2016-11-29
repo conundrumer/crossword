@@ -1,0 +1,19 @@
+[3,0,H,0,2,V]:
+  width: 5
+  height: 5
+  area: 25
+  overlaps: 1
+  portrait: |
+    .
+      w  
+      o  
+      r  
+    hello
+      d  
+  landscape: |
+    .
+       h 
+       e 
+    world
+       l 
+       o 

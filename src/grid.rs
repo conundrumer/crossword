@@ -1,5 +1,3 @@
-use std::fmt::{Display, Formatter, Result};
-
 use placement::Position;
 use bounding_box::BoundingBox;
 use grid_cell::GridCell;
@@ -7,7 +5,7 @@ use grid_cell::GridCell::*;
 
 #[derive(Debug)]
 pub struct Grid {
-    pub is_valid: bool,
+    pub is_valid: bool, // TODO: remove and replace is_valid tests with can_place
     pub num_overlaps: i8,
     grid: Vec<GridCell>,
     pub letters: Vec<(char, Position)>,
@@ -86,33 +84,34 @@ impl Grid {
             let next_cell = old_cell.get_next(cell);
             next_cell != Collision
         })
-
+    }
+    pub fn iter_rows<'a>(&'a self) -> impl Iterator<Item=Option<GridCell>> + 'a {
+        let bb = self.bb.contract();
+        (bb.top .. bb.bottom + 1).flat_map(move |row| {
+            (bb.left .. bb.right + 1).map(move |col| {
+                let row_col = self.bb.row_col(row, col);
+                Some(self.grid[row_col])
+            }).chain(if row < bb.bottom { Some(None) } else { None }.into_iter())
+        })
+    }
+    pub fn iter_cols<'a>(&'a self) -> impl Iterator<Item=Option<GridCell>> + 'a {
+        let bb = self.bb.contract();
+        (bb.left .. bb.right + 1).flat_map(move |col| {
+            (bb.top .. bb.bottom + 1).map(move |row| {
+                let row_col = self.bb.row_col(row, col);
+                Some(self.grid[row_col])
+            }).chain(if col < bb.right { Some(None) } else { None }.into_iter())
+        })
     }
 }
 
-// use placement::Direction::{Horizontal, Vertical};
+use std::fmt::{Display, Formatter, Result};
 impl Display for Grid {
     fn fmt(&self, f: &mut Formatter) -> Result {
-        let bb = self.bb.contract();
-        for row in bb.top .. bb.bottom + 1 {
-            for col in bb.left .. bb.right + 1 {
-                let row_col = self.bb.row_col(row, col);
-                let cell = self.grid[row_col];
-                match cell {
-                    // Empty => write!(f, " ")?,
-                    // Block(Some(Horizontal)) => write!(f, "-")?,
-                    // Block(Some(Vertical)) => write!(f, "|")?,
-                    // Block(None) => write!(f, "+")?,
-                    // Letter(_, Some(Horizontal)) => write!(f, "-")?,
-                    // Letter(_, Some(Vertical)) => write!(f, "|")?,
-                    // Letter(_, None) => write!(f, "+")?,
-                    Empty | Block(_) => write!(f, " ")?,
-                    Letter(c, _) => write!(f, "{}", c)?,
-                    Collision => write!(f, "*")?
-                }
-                if col == bb.right && row != bb.bottom  {
-                    write!(f, "\n")?
-                }
+        for entry in self.iter_rows() {
+            match entry {
+                Some(cell) => write!(f, "{}", cell)?,
+                None => writeln!(f, "")?
             }
         }
         write!(f, "")

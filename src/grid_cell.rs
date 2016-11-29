@@ -75,6 +75,23 @@ impl GridCell {
     }
 }
 
+use std::fmt::{Display, Formatter, Result};
+impl Display for GridCell {
+    fn fmt(&self, f: &mut Formatter) -> Result {
+        match *self {
+            // Empty => write!(f, " "),
+            // Block(Some(Horizontal)) => write!(f, "-"),
+            // Block(Some(Vertical)) => write!(f, "|"),
+            // Block(None) => write!(f, "+"),
+            // Letter(_, Some(Horizontal)) => write!(f, "-"),
+            // Letter(_, Some(Vertical)) => write!(f, "|"),
+            // Letter(_, None) => write!(f, "+"),
+            Empty | Block(_) => write!(f, " "),
+            Letter(c, _) => write!(f, "{}", c),
+            Collision => write!(f, "*")
+        }
+    }
+}
 
 #[cfg(test)]
 pub mod tests {

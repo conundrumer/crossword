@@ -18,6 +18,20 @@ impl WordPlacements {
     }
 }
 
+use std::fmt::{Display, Formatter, Result};
+impl Display for WordPlacements {
+    fn fmt(&self, f: &mut Formatter) -> Result {
+        for (i, &opt_pos) in self.0.iter().enumerate() {
+            if let Some(pos) = opt_pos {
+                write!(f, "{}", pos)?;
+                if i < self.0.len() - 1 {
+                    write!(f, ",")?;
+                }
+            }
+        }
+        write!(f, "")
+    }
+}
 #[cfg(test)]
 mod tests {
     use super::*;

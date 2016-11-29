@@ -49,7 +49,54 @@ impl Crossword {
 use std::fmt::{Display, Formatter, Result};
 impl Display for Crossword {
     fn fmt(&self, f: &mut Formatter) -> Result {
-        write!(f, "{}", self.grid)
+        // portrait by default
+        let bb = self.bounding_box();
+        let (width, height) = (bb.width(), bb.height());
+        let is_landscape = width > height;
+        let (width, height) = if is_landscape { (height, width) } else { (width, height) };
+
+        let write_attributes = |f: &mut Formatter| {
+            writeln!(f, "[{}]:", self.positions)?;
+            writeln!(f, "  width: {}", width)?;
+            writeln!(f, "  height: {}", height)?;
+            writeln!(f, "  area: {}", width * height)?;
+            writeln!(f, "  overlaps: {}", self.num_overlaps())
+        };
+        let write_entry = |f: &mut Formatter, entry| {
+            if let Some(cell) = entry {
+                write!(f, "{}", cell)
+            } else {
+                writeln!(f, "")?;
+                write!(f, "    ")
+            }
+        };
+        let write_rows = |f: &mut Formatter| {
+            writeln!(f, "  portrait: |")?;
+            writeln!(f, "    .")?;
+            write!(f, "    ")?;
+            for entry in self.grid.iter_rows() {
+                write_entry(f, entry)?;
+            }
+            writeln!(f, "")
+        };
+        let write_cols = |f: &mut Formatter| {
+            writeln!(f, "  landscape: |")?;
+            writeln!(f, "    .")?;
+            write!(f, "    ")?;
+            for entry in self.grid.iter_cols() {
+                write_entry(f, entry)?;
+            }
+            writeln!(f, "")
+        };
+        write_attributes(f)?;
+        if is_landscape {
+            write_cols(f)?;
+            write_rows(f)?;
+        } else {
+            write_rows(f)?;
+            write_cols(f)?;
+        }
+        write!(f, "")
     }
 }
 
@@ -127,7 +174,7 @@ pub mod tests {
 
     #[test]
     fn display() {
-        let expected = include_str!("test_crossword_display.txt");
+        let expected = include_str!("test_crossword_display.yaml");
         let crossword = make_hello_world();
         println!("Expected:");
         println!("{}", expected);
