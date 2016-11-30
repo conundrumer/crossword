@@ -39,24 +39,24 @@ impl<'a> Generator<'a> {
         let rc_crossword_2 = rc_crossword_1.clone();
         let cloned_words = (*words).clone();
         Box::new(cloned_words.into_iter().enumerate()
-            .filter_map(|(new_word_index, opt_word)| {
-                opt_word.map(|new_word| {
-                    (new_word_index, new_word)
+            .filter_map(|(word_index, opt_word)| {
+                opt_word.map(|word| {
+                    (word_index, word)
                 })
             })
-            .map(move |(new_word_index, new_word)| {
+            .map(move |(word_index, word)| {
                 let mut next_words = (*words).clone();
-                next_words[new_word_index] = None;
+                next_words[word_index] = None;
                 let next_words = Rc::new(next_words);
-                (new_word, new_word_index, next_words)
+                (word, word_index, next_words)
             })
             .flat_map(move |w| {
                 rc_crossword_2.letters().clone().into_iter()
                     .map(move |char1| (w.clone(), char1))
             })
-            .flat_map(|((new_word, new_word_index, next_words), char1)| {
-                new_word.chars().enumerate().map(move |(i2, c2)| {
-                    ((new_word_index, next_words.clone()), char1, (i2, c2))
+            .flat_map(|((word, word_index, next_words), char1)| {
+                word.chars().enumerate().map(move |(i2, c2)| {
+                    ((word_index, next_words.clone()), char1, (i2, c2))
                 })
             })
             .filter_map(|(w, (c1, pos), (i2, c2))| {
@@ -66,18 +66,18 @@ impl<'a> Generator<'a> {
                 let next_pos = pos.from_offset(i2 as i8);
                 Some((w, next_pos))
             })
-            .filter_map(move |((new_word_index, next_words), next_pos)| {
-                let word = word_list[new_word_index];
+            .filter_map(move |((word_index, next_words), next_pos)| {
+                let word = word_list[word_index];
                 if filter.by_area(word.chars().count(), next_pos, bb) {
-                    Some((new_word_index, next_words, next_pos))
+                    Some((word_index, next_words, next_pos))
                 } else {
                     None
                 }
             })
-            .filter_map(move |(new_word_index, next_words, next_pos)| {
-                let word = word_list[new_word_index];
+            .filter_map(move |(word_index, next_words, next_pos)| {
+                let word = word_list[word_index];
                 if rc_crossword_1.can_add_word(word, word.chars().count(), next_pos) {
-                    Some((rc_crossword_1.set(word, word.chars().count(), new_word_index, next_pos), next_words))
+                    Some((rc_crossword_1.set(word, word.chars().count(), word_index, next_pos), next_words))
                 } else {
                     None
                 }
