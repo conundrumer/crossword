@@ -48,17 +48,20 @@ fn main() {
     let _ = seed;
 
     let stdin = io::stdin();
-    let words = stdin.lock().lines().map(|line| line.unwrap()).collect::<Vec<_>>();
+    let words = stdin.lock().lines()
+        .map(|line| line.unwrap())
+        .take_while(|line| line.len() > 0)
+        .collect::<Vec<_>>();
     let words = words.iter().map(|s| s).collect();
     let gen = Generator::new(words, num_areas);
-    let iter = gen.iter()
-        .scan(0, |state, cw| {
-            if cw.num_overlaps() >= *state {
-                *state = cw.num_overlaps();
-                return Some(Some(cw))
-            }
-            Some(None)
-        }).filter_map(|x| x);
+    let iter = gen.iter();
+        // .scan(0, |state, cw| {
+        //     if cw.num_overlaps() >= *state {
+        //         *state = cw.num_overlaps();
+        //         return Some(Some(cw))
+        //     }
+        //     Some(None)
+        // }).filter_map(|x| x);
 
     // println!("{}", iter.count());
     println!("{}", gen);
