@@ -16,8 +16,8 @@ impl BoundingBox {
             right: right
         }
     }
-    pub fn from_word_pos(word: &str, pos: Position) -> BoundingBox {
-        let last_pos = pos.letter_pos((word.len() - 1) as i8);
+    pub fn from_word_pos(word_len: usize, pos: Position) -> BoundingBox {
+        let last_pos = pos.letter_pos((word_len - 1) as i8);
         BoundingBox::new(pos.row, pos.col, last_pos.row, last_pos.col)
     }
     pub fn combine(&self, other: BoundingBox) -> BoundingBox {
@@ -35,8 +35,8 @@ impl BoundingBox {
     pub fn contract(&self) -> BoundingBox {
         BoundingBox::new(self.top + 1, self.left + 1, self.bottom - 1, self.right - 1)
     }
-    pub fn combine_word_pos(&self, word: &str, pos: Position) -> BoundingBox {
-        self.combine(BoundingBox::from_word_pos(word, pos))
+    pub fn combine_word_pos(&self, word_len: usize, pos: Position) -> BoundingBox {
+        self.combine(BoundingBox::from_word_pos(word_len, pos))
     }
     pub fn row_col(&self, row: i8, col: i8) -> usize {
         let row = (row - self.top) as usize;

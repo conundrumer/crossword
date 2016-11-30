@@ -13,9 +13,6 @@ impl WordPlacements {
         next_self.0[word_index] = Some(pos);
         next_self
     }
-    pub fn index_positions<'a>(&'a self) -> Box<Iterator<Item=(usize, Position)>> {
-        Box::new(self.0.clone().into_iter().enumerate().filter_map(|(word_index, opt_pos)| opt_pos.map(|pos| (word_index, pos))))
-    }
 }
 
 use std::fmt::{Display, Formatter, Result};
@@ -54,15 +51,6 @@ mod tests {
             Some(pos)
         ]);
         assert_eq!(wp, WordPlacements::new(2).set(1, pos));
-    }
-    #[test]
-    fn index_positions() {
-        let pos = Position { row: 1, col: -1, dir: Vertical };
-
-        let wp = WordPlacements::new(3).set(2, pos);
-        let iter = wp.index_positions();
-        let vec: Vec<_> = iter.collect();
-        assert_eq!(vec![(2, pos)], vec);
     }
 
     #[test]

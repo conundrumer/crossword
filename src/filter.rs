@@ -102,14 +102,12 @@ impl Filter {
     pub fn num_areas(&self) -> usize {
         self.overlap_areas.num_areas
     }
-    pub fn num_seen(&self) -> usize {
-        self.seen.borrow().len()
-    }
-    pub fn by_area(&self, word: &str, next_pos: Position, bb: BoundingBox) -> bool {
+
+    pub fn by_area(&self, word_len: usize, next_pos: Position, bb: BoundingBox) -> bool {
         if !self.has_min_areas {
             return true
         }
-        let area = bb.combine_word_pos(word, next_pos).area();
+        let area = bb.combine_word_pos(word_len, next_pos).area();
         area <= self.overlap_areas.get_max_area()
     }
     pub fn by_seen(&self, crossword: &Crossword, num_remaining_words: usize) -> bool {

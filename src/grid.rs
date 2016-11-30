@@ -24,8 +24,8 @@ impl Grid {
     fn make_grid(bb: BoundingBox) -> Vec<GridCell> {
         vec![Empty; ((bb.width() as usize) * (bb.height() as usize))]
     }
-    pub fn set(&self, word: &str, pos: Position) -> Grid {
-        let bb = self.bb.combine(BoundingBox::from_word_pos(word, pos).expand());
+    pub fn set(&self, word: &str, word_len: usize, pos: Position) -> Grid {
+        let bb = self.bb.combine(BoundingBox::from_word_pos(word_len, pos).expand());
         let mut grid = Grid::make_grid(bb);
         let mut letters = self.letters.clone();
         let mut is_valid = self.is_valid;
@@ -37,7 +37,7 @@ impl Grid {
             grid[row_col] = cell
         }
         // add word and check for collisions and overlaps and letter additions/removals
-        for  (cell, (row, col)) in GridCell::from_word(word, pos) {
+        for  (cell, (row, col)) in GridCell::from_word(word, word_len, pos) {
             let row_col = bb.row_col(row, col);
             let old_cell = grid[row_col];
             let next_cell = old_cell.get_next(cell);
@@ -71,8 +71,8 @@ impl Grid {
             bb: bb
         }
     }
-    pub fn can_add_word(&self, word: &str, pos: Position) -> bool {
-        GridCell::from_word(word, pos).all(|(cell, (row, col))| {
+    pub fn can_add_word(&self, word: &str, word_len: usize, pos: Position) -> bool {
+        GridCell::from_word(word, word_len, pos).all(|(cell, (row, col))| {
             if row < self.bb.top || col < self.bb.left {
                 return true
             }

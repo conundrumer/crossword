@@ -22,7 +22,7 @@ pub enum GridCell {
 use self::GridCell::*;
 impl GridCell {
 
-    pub fn from_word<'a>(word: &'a str, pos: Position) -> impl Iterator<Item=GridCellPos> + 'a {
+    pub fn from_word<'a>(word: &'a str, word_len: usize, pos: Position) -> impl Iterator<Item=GridCellPos> + 'a {
         let letter_iter = word.chars().enumerate()
             .map(move |(j, c)| {
                 (pos.letter_pos(j as i8), c)
@@ -38,7 +38,7 @@ impl GridCell {
                 cell1.chain(cell2).chain(cell3)
             });
         let start_pos = pos.letter_pos(-1);
-        let end_pos = pos.letter_pos(word.len() as i8);
+        let end_pos = pos.letter_pos(word_len as i8);
         let start_cell = block_none(start_pos.row, start_pos.col);
         let end_cell = block_none(end_pos.row, end_pos.col);
         start_cell.chain(letter_iter).chain(end_cell)

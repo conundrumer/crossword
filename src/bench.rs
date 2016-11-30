@@ -1,35 +1,39 @@
 use test;
 
-use generate::Generator;
+use generate::tests::test_generator;
 
 #[bench]
 fn generate_1(b: &mut test::Bencher) {
     b.iter(|| {
-        let gen = Generator::new(vec![
+        let words =  vec![
             "toon",
             "took",
             "noob",
             "koob"
-        ], 0);
-        for cw in gen.iter() {
-            let _ = cw;
-        }
+        ];
+        test_generator(words, 0, &|gen| {
+            for cw in gen.iter() {
+                let _ = cw;
+            }
+        });
     })
 }
 
 #[bench]
 fn generate_2(b: &mut test::Bencher) {
     b.iter(|| {
-        let gen = Generator::new(vec![
+        let words =  vec![
             "scent",
             "scarf",
             "fleet",
             "tenet",
             "eerie"
-        ], 0);
-        for cw in gen.iter() {
-            let _ = cw;
-        }
+        ];
+        test_generator(words, 0, &|gen| {
+            for cw in gen.iter() {
+                let _ = cw;
+            }
+        });
     })
 }
 
@@ -52,16 +56,18 @@ fn generate_2(b: &mut test::Bencher) {
 #[bench]
 fn generate_3(b: &mut test::Bencher) {
     b.iter(|| {
-        let gen = Generator::new(vec![
+        let words = vec![
             "monospace",
             "aesthetics",
             "corporate",
             "vaporwave",
             "crossword",
             "unicode"
-        ], 1);
-        for cw in gen.iter() {
-            let _ = cw;
-        }
+        ];
+        test_generator(words, 1, &|gen| {
+            for cw in gen.iter() {
+                let _ = cw;
+            }
+        });
     })
 }

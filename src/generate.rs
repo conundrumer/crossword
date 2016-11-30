@@ -5,30 +5,27 @@ use placement::START_POSITION;
 use filter::Filter;
 
 pub struct Generator<'a> {
-    word_list: Vec<&'a str>,
+    word_list: Vec<&'a String>,
     filter: Filter
 }
 impl<'a> Generator<'a> {
-    pub fn new(words: Vec<&'a str>, num_areas: usize) -> Generator<'a> {
+    pub fn new(words: Vec<&'a String>, num_areas: usize) -> Generator<'a> {
         Generator {
             word_list: words.clone(),
             filter: Filter::new(num_areas)
         }
     }
 
-    pub fn num_seen(&self) -> usize {
-        self.filter.num_seen()
-    }
-
     pub fn iter<'b>(&'b self) -> Box<Iterator<Item=Crossword> + 'b> {
         let mut remaining_words: Vec<_> = self.word_list.iter().cloned().map(|x| Some(x)).collect();
         remaining_words[0] = None;
-        let init_crossword = Crossword::new(&self.word_list).set(&self.word_list, 0, START_POSITION);
+        let first_word = self.word_list[0];
+        let init_crossword = Crossword::new(self.word_list.len()).set(first_word, first_word.chars().count(), 0, START_POSITION);
 
         self.from_word_vec(init_crossword, Rc::new(remaining_words))
     }
 
-    fn from_word_vec<'b>(&'b self, crossword: Crossword, words: Rc<Vec<Option<&'a str>>>) -> Box<Iterator<Item=Crossword> + 'b> {
+    fn from_word_vec<'b>(&'b self, crossword: Crossword, words: Rc<Vec<Option<&'a String>>>) -> Box<Iterator<Item=Crossword> + 'b> {
         let num_remaining_words = words.iter().filter(|opt_word| opt_word.is_some()).count();
         if num_remaining_words == 0 {
             return Box::new(Some(crossword).into_iter());
@@ -70,15 +67,17 @@ impl<'a> Generator<'a> {
                 Some((w, next_pos))
             })
             .filter_map(move |((new_word_index, next_words), next_pos)| {
-                if filter.by_area(word_list[new_word_index], next_pos, bb) {
+                let word = word_list[new_word_index];
+                if filter.by_area(word.chars().count(), next_pos, bb) {
                     Some((new_word_index, next_words, next_pos))
                 } else {
                     None
                 }
             })
             .filter_map(move |(new_word_index, next_words, next_pos)| {
-                if rc_crossword_1.can_add_word(word_list[new_word_index], next_pos) {
-                    Some((rc_crossword_1.set(word_list, new_word_index, next_pos), next_words))
+                let word = word_list[new_word_index];
+                if rc_crossword_1.can_add_word(word, word.chars().count(), next_pos) {
+                    Some((rc_crossword_1.set(word, word.chars().count(), new_word_index, next_pos), next_words))
                 } else {
                     None
                 }
@@ -108,7 +107,7 @@ impl<'a> Display for Generator<'a> {
 }
 
 #[cfg(test)]
-mod tests {
+pub mod tests {
     use super::*;
 
     use placement::{ Position };
@@ -117,66 +116,80 @@ mod tests {
 
     type WordPosition = (&'static str, Position);
 
+    pub fn test_generator(words: Vec<&str>, num_areas: usize, test_fn: &Fn(Generator) -> ()) {
+        let words = words.iter().map(|s| s.to_string()).collect::<Vec<_>>();
+        let words = words.iter().map(|s| s).collect();
+        let gen = Generator::new(words, num_areas);
+        test_fn(gen);
+    }
+
+
     #[test]
     fn display() {
-        let gen = Generator::new(vec![
+        let words = vec![
             "hello",
             "world"
-        ], 0);
-        
+        ];
         let expected = include_str!("test_generator_display.yaml");
-        assert_eq!(expected, format!("{}", gen));
+        test_generator(words, 0, &|gen| {
+            assert_eq!(expected, format!("{}", gen));
+        });
     }
 
     #[test]
     fn test_gen_iter () {
-        let gen = Generator::new(vec![
+        let words = vec![
             "ton",
             "tok",
             "nob",
             "kob"
-        ], 0);
-        let crosswords: Vec<_> = gen.iter().collect();
+        ];
         let expected = make_crossword(vec![
             ("ton", Position { row: 0, col: 0, dir: Horizontal }),
             ("tok", Position { row: 0, col: 0, dir: Vertical }),
             ("nob", Position { row: 0, col: 2, dir: Vertical }),
             ("kob", Position { row: 2, col: 0, dir: Horizontal })
         ]);
-        assert_eq!(1, crosswords.len());
+        test_generator(words, 0, &|gen| {
+            let crosswords: Vec<_> = gen.iter().collect();
+            assert_eq!(1, crosswords.len());
+            assert_eq!(expected, crosswords[0]);
+        });
 
-        assert_eq!(expected, crosswords[0]);
-
-        let gen = Generator::new(vec![
+        let words = vec![
             "toon",
             "took",
             "noob",
             "koob"
-        ], 0);
-        let crosswords: Vec<_> = gen.iter().collect();
+        ];
+        test_generator(words, 0, &|gen| {
+            let crosswords: Vec<_> = gen.iter().collect();
+            assert_eq!(22, crosswords.len());
+        });
 
-        assert_eq!(22, crosswords.len());
-
-        let gen = Generator::new(vec![
+        let words = vec![
             "toon",
             "took",
             "noob",
             "koob"
-        ], 1);
-        let crosswords: Vec<_> = gen.iter().collect();
-
-        assert_eq!(10, crosswords.len());
+        ];
+        test_generator(words, 1, &|gen| {
+            let crosswords: Vec<_> = gen.iter().collect();
+            assert_eq!(10, crosswords.len());
+        });
     }
 
     #[test]
     fn letter_block_collision() {
-        let gen = Generator::new(vec![
+        let words = vec![
             "1A",
             "B1B2",
             "4CC3",
             "4DD",
             "3EE2",
-        ], 0);
-        assert_eq!(0, gen.iter().count());
+        ];
+        test_generator(words, 0, &|gen| {
+            assert_eq!(0, gen.iter().count());
+        });
     }
 }

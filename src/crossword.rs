@@ -16,20 +16,19 @@ impl PartialEq for Crossword {
 }
 impl Eq for Crossword {}
 impl Crossword {
-    pub fn new(word_list: &Vec<&str>) -> Crossword {
+    pub fn new(num_words: usize) -> Crossword {
         Crossword {
-            positions: WordPlacements::new(word_list.len()),
+            positions: WordPlacements::new(num_words),
             grid: Grid::new(BoundingBox::new(0, 0, 0, 0))
         }
     }
-    pub fn can_add_word(&self, word: &str, pos: Position) -> bool {
-        self.grid.can_add_word(word, pos)
+    pub fn can_add_word(&self, word: &str, word_len: usize, pos: Position) -> bool {
+        self.grid.can_add_word(word, word_len, pos)
     }
-    pub fn set(&self, word_list: &Vec<&str>, word_index: usize, pos: Position) -> Crossword {
-        let word = word_list[word_index];
+    pub fn set(&self, word: &str, word_len: usize, word_index: usize, pos: Position) -> Crossword {
         Crossword {
             positions: self.positions.set(word_index, pos),
-            grid: self.grid.set(word, pos)
+            grid: self.grid.set(word, word_len, pos)
         }
     }
     pub fn bounding_box(&self) -> BoundingBox {
@@ -98,8 +97,11 @@ pub mod tests {
     pub fn make_crossword(word_positions: Vec<WordPosition>) -> Crossword {
         let (word_list, positions): (Vec<_>, Vec<_>) = word_positions.iter().cloned().unzip();
         positions.into_iter().enumerate().fold(
-            Crossword::new(&word_list),
-            |cw, (word_index, pos)| cw.set(&word_list, word_index, pos)
+            Crossword::new(word_list.len()),
+            |cw, (word_index, pos)| {
+                let word = word_list[word_index];
+                cw.set(word, word.chars().count(), word_index, pos)
+            }
         )
     }
 
