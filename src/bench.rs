@@ -71,3 +71,36 @@ fn generate_3(b: &mut test::Bencher) {
         });
     })
 }
+
+#[bench]
+fn generate_4(b: &mut test::Bencher) {
+    b.iter(|| {
+        let words = vec![
+            "cats",
+            "bone",
+            "wrench",
+            "title",
+            "shaggy",
+            "baseball",
+            "club",
+            "man",
+            "scared",
+            "room",
+            "enjoy",
+            "hurt",
+            "alarm",
+            "polite",
+            "tame",
+            "birds",
+            "board",
+            "decorate",
+            "tall",
+            "messy",
+        ];
+        test_generator(words, 1, &|gen| {
+            for cw in gen.iter().take(29) {
+                let _ = cw;
+            }
+        });
+    })
+}
