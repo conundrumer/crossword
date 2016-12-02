@@ -2,3 +2,4 @@ word_list:
   - hello
   - world
 num_areas: 0
+seed: 0

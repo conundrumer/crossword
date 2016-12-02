@@ -1,17 +1,20 @@
 use std::rc::Rc;
 
 use crossword::Crossword;
-use placement::START_POSITION;
+use placement::{Position, START_POSITION};
 use filter::Filter;
+// use rand::{hash, rand_range};
 
 pub struct Generator<'a> {
+    seed: u64,
     word_list: Vec<&'a String>,
     word_chars_list: Vec<Vec<char>>,
-    filter: Filter
+    filter: Filter,
 }
 impl<'a> Generator<'a> {
-    pub fn new(words: Vec<&'a String>, num_areas: usize) -> Generator<'a> {
+    pub fn new(words: Vec<&'a String>, num_areas: usize, seed: u64) -> Generator<'a> {
         Generator {
+            seed: seed,
             word_list: words.clone(),
             word_chars_list: words.iter().map(|word| word.chars().collect()).collect(),
             filter: Filter::new(num_areas)
@@ -40,6 +43,7 @@ impl<'a> Generator<'a> {
 
     fn from_word_vec<'b>(&'b self, crossword: Crossword, candidates: Rc<Vec<usize>>) -> Box<Iterator<Item=(Crossword, Rc<Vec<usize>>)> + 'b> {
         let &Generator {
+            seed: _,
             ref filter,
             ref word_list,
             ref word_chars_list
@@ -50,55 +54,63 @@ impl<'a> Generator<'a> {
         let letters_len = letters.len();
         let crossword = Rc::new(crossword);
         let rc_candidates = candidates.clone();
-        Box::new((0..n)
-            .map(move |candidate_index| {
+        // let seed = hash(&crossword.positions, seed);
+        let get_words = |range| {
+            (0..n).map(move |candidate_index| {
                 let word_index = rc_candidates[candidate_index];
-                let word_len = word_chars_list[word_index].len();
+                let word_chars: &Vec<char> = &word_chars_list[word_index];
+                let word_len = word_chars.len();
                 (word_index, word_len, candidate_index)
             })
-            .flat_map(move |w| {
-                let letters = letters.clone();
-                (0..letters_len).map(move |i| (w, letters[i]))
-            })
-            .flat_map(move |((word_index, word_len, candidate_index), char_pos)| {
-                (0..word_len).map(move |i2| {
-                    ((word_index, word_len, candidate_index), char_pos, i2)
-                })
-            })
-            .filter_map(move |((word_index, word_len, candidate_index), (c1, pos), i2)| {
-                let word_chars = &word_chars_list[word_index];
-                let c2 = word_chars[i2];
-                if c1 != c2 {
-                    return None
-                }
-                let word = word_list[word_index];
-                let next_pos = pos.from_offset(i2 as i8);
-                if !filter.by_area(word_len, next_pos, bb) {
-                    return None
-                }
-                if !crossword.can_add_word(word, word_len, next_pos) {
-                    return None
-                }
-                let next_crossword = crossword.set(word, word_len, word_index, next_pos);
-                if !filter.by_seen(&next_crossword, n) {
-                    return None
-                }
-                let mut next_candidates = (*candidates).clone();
-                next_candidates.remove(candidate_index);
-                let next_candidates = Rc::new(next_candidates);
-                Some((next_crossword, next_candidates))
-            }))
+        };
+        let get_letters = move |w| {
+            let letters = letters.clone();
+            (0..letters_len).map(move |i| (w, letters[i]))
+        };
+        let get_word_chars = move |((word_index, word_len, candidate_index), char_pos)| {
+            (0..word_len).map(move |i2| ((word_index, word_len, candidate_index), char_pos, i2))
+        };
+        let filter_candidates = move |((word_index, word_len, candidate_index), (c1, pos), i2)| {
+            let word_chars = &word_chars_list[word_index];
+            let c2 = word_chars[i2];
+            if c1 != c2 {
+                return None
+            }
+            let word: &String = word_list[word_index];
+            let pos: Position = pos;
+            let next_pos = pos.from_offset(i2 as i8);
+            if !filter.by_area(word_len, next_pos, bb) {
+                return None
+            }
+            if !crossword.can_add_word(word, word_len, next_pos) {
+                return None
+            }
+            let next_crossword = crossword.set(word, word_len, word_index, next_pos);
+            if !filter.by_seen(&next_crossword, n) {
+                return None
+            }
+            let mut next_candidates = (*candidates).clone();
+            next_candidates.remove(candidate_index);
+            let next_candidates = Rc::new(next_candidates);
+            Some((next_crossword, next_candidates))
+        };
+        Box::new(
+            get_words()
+            .flat_map(get_letters)
+            .flat_map(get_word_chars)
+            .filter_map(filter_candidates)
+        )
     }
 }
 use std::fmt::{Display, Formatter, Result};
 impl<'a> Display for Generator<'a> {
     fn fmt(&self, f: &mut Formatter) -> Result {
-        write!(f, "word_list:\n")?;
+        writeln!(f, "word_list:")?;
         for word in &self.word_list {
-            write!(f, "  - {}\n", word)?;
+            writeln!(f, "  - {}", word)?;
         }
-        write!(f, "num_areas: {}", self.filter.num_areas())?;
-        write!(f, "\n")
+        writeln!(f, "num_areas: {}", self.filter.num_areas())?;
+        writeln!(f, "seed: {}", self.seed)
     }
 }
 
@@ -115,7 +127,7 @@ pub mod tests {
     pub fn test_generator(words: Vec<&str>, num_areas: usize, test_fn: &Fn(Generator) -> ()) {
         let words = words.iter().map(|s| s.to_string()).collect::<Vec<_>>();
         let words = words.iter().map(|s| s).collect();
-        let gen = Generator::new(words, num_areas);
+        let gen = Generator::new(words, num_areas, 0);
         test_fn(gen);
     }
 
