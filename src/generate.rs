@@ -3,7 +3,7 @@ use std::rc::Rc;
 use crossword::Crossword;
 use placement::{Position, START_POSITION};
 use filter::Filter;
-// use rand::{hash, rand_range};
+use rand::{hash, rand_range};
 
 pub struct Generator<'a> {
     seed: u64,
@@ -43,7 +43,7 @@ impl<'a> Generator<'a> {
 
     fn from_word_vec<'b>(&'b self, crossword: Crossword, candidates: Rc<Vec<usize>>) -> Box<Iterator<Item=(Crossword, Rc<Vec<usize>>)> + 'b> {
         let &Generator {
-            seed: _,
+            seed,
             ref filter,
             ref word_list,
             ref word_chars_list
@@ -54,21 +54,24 @@ impl<'a> Generator<'a> {
         let letters_len = letters.len();
         let crossword = Rc::new(crossword);
         let rc_candidates = candidates.clone();
-        // let seed = hash(&crossword.positions, seed);
-        let get_words = |range| {
-            (0..n).map(move |candidate_index| {
-                let word_index = rc_candidates[candidate_index];
-                let word_chars: &Vec<char> = &word_chars_list[word_index];
-                let word_len = word_chars.len();
-                (word_index, word_len, candidate_index)
-            })
+        let seed = if n < 6 { 0 } else { hash(&crossword.positions, seed) };
+        let get_words = || {
+            (0..n).map(rand_range(n, hash(seed, seed)))
+                .map(move |candidate_index| {
+                    let word_index = rc_candidates[candidate_index];
+                    let word_chars: &Vec<char> = &word_chars_list[word_index];
+                    let word_len = word_chars.len();
+                    (word_index, word_len, candidate_index)
+                })
         };
         let get_letters = move |w| {
             let letters = letters.clone();
-            (0..letters_len).map(move |i| (w, letters[i]))
+            (0..letters_len).map(rand_range(letters_len, hash(w, seed)))
+                .map(move |i| (w, letters[i]))
         };
         let get_word_chars = move |((word_index, word_len, candidate_index), char_pos)| {
-            (0..word_len).map(move |i2| ((word_index, word_len, candidate_index), char_pos, i2))
+            (0..word_len).map(rand_range(word_len, hash(char_pos, seed)))
+                .map(move |i2| ((word_index, word_len, candidate_index), char_pos, i2))
         };
         let filter_candidates = move |((word_index, word_len, candidate_index), (c1, pos), i2)| {
             let word_chars = &word_chars_list[word_index];

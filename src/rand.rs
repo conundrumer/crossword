@@ -12,13 +12,16 @@ pub fn hash<T: Hash>(t: T, seed: u64) -> u64 {
 
 // two param 1-1 mapping of a range of ints
 pub fn rand_range(n: usize, seed: u64) -> impl Fn(usize) -> usize {
-    let (offset, stride) = if n > 1 {
+    let (offset, stride) = if n > 1 && seed != 0 {
         let seed = seed as usize;
         (seed % n, (seed / n) % (n - 1) + 1)
     } else {
         (0, 0)
     };
     return move |i| {
+        if seed == 0 {
+            return i
+        }
         let j = i * stride + offset;
         return (j + j / n) % n;
     }
