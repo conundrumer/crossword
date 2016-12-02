@@ -51,18 +51,8 @@ fn main() {
         .collect::<Vec<_>>();
     let words = words.iter().map(|s| s).collect();
     let gen = Generator::new(words, num_areas, seed);
-    let mut iters = vec![];
-    for _ in 0..num_iters {
-        let iter = gen.iter();
-        iters.push(iter);
-    }
     println!("{}", gen);
-    loop {
-        let count = (0..num_iters).filter_map(|i| iters[i].next()).inspect(|crossword| {
-            println!("{}", crossword);
-        }).count();
-        if count == 0 {
-            break
-        }
+    for crossword in gen.multi_iter(num_iters) {
+        println!("{}", crossword);
     }
 }

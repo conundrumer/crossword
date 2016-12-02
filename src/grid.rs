@@ -3,7 +3,7 @@ use bounding_box::BoundingBox;
 use grid_cell::GridCell;
 use grid_cell::GridCell::*;
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct Grid {
     pub is_valid: bool, // TODO: remove and replace is_valid tests with can_place
     pub num_overlaps: i8,

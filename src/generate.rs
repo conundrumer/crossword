@@ -1,5 +1,5 @@
 use std::rc::Rc;
-use std::cell::Cell;
+use std::cell::{RefCell, Cell};
 
 use crossword::Crossword;
 use placement::{Position, START_POSITION};
@@ -24,16 +24,66 @@ impl<'a> Generator<'a> {
         }
     }
 
-    pub fn iter<'b>(&'b self) -> Box<Iterator<Item=Crossword> + 'b> {
-        let candidates = (1..self.word_list.len()).collect();
+    fn get_seed(&self) -> u64 {
+        let seed = self.next_seed.get();
+        self.next_seed.set(hash(seed, self.seed));
+        seed
+    }
+
+    fn get_init(&self) -> (Crossword, Rc<Vec<usize>>) {
         let first_word = self.word_list[0];
         let first_word_len = self.word_chars_list[0].len();
         let init_crossword = Crossword::new(self.word_list.len()).set(first_word, first_word_len, 0, START_POSITION);
+        let candidates = (1..self.word_list.len()).collect();
+        (init_crossword, Rc::new(candidates))
+    }
 
-        let seed = self.next_seed.get();
-        self.next_seed.set(hash(seed, self.seed));
+    pub fn iter<'b>(&'b self) -> Box<Iterator<Item=Crossword> + 'b> {
+        let (init_crossword, candidates) = self.get_init();
+        self.from_word_vec_recursive(init_crossword, candidates, self.get_seed())
+    }
 
-        self.from_word_vec_recursive(init_crossword, Rc::new(candidates), seed)
+    pub fn multi_iter<'b>(&'b self, num_iters: usize) -> Box<Iterator<Item=Crossword> + 'b> {
+        let (init_crossword, candidates) = self.get_init();
+        let seeds = vec![self.get_seed(); num_iters];
+        let mut iters = vec![];
+        for i in 0..num_iters {
+            let iter = self.from_word_vec_partial(init_crossword.clone(), candidates.clone(), seeds[i]);
+            iters.push(RefCell::new(iter));
+        }
+        Box::new((0..num_iters)
+            .cycle()
+            .scan(false, move |state, i| {
+                let mut iter = iters[i].borrow_mut();
+                let r = if let Some((crossword, candidates)) = iter.next() {
+                    *state = true;
+                    Some(Some(self.from_word_vec_recursive(crossword, candidates, seeds[i])))
+                } else {
+                    Some(None)
+                };
+                if i == num_iters - 1 {
+                    if *state == false {
+                        return None
+                    } else {
+                        *state = false
+                    }
+                }
+                r
+            })
+            .filter_map(|x| x)
+            .flat_map(|x| x)
+        )
+    }
+
+    fn from_word_vec_partial<'b>(&'b self, crossword: Crossword, candidates: Rc<Vec<usize>>, seed: u64) -> Box<Iterator<Item=(Crossword, Rc<Vec<usize>>)> + 'b> {
+        let n = candidates.len();
+        if n <= 6 {
+            return Box::new(Some((crossword, candidates)).into_iter());
+        }
+        Box::new(self.from_word_vec(crossword, candidates, seed)
+            .flat_map(move |(next_crossword, next_candidates)| {
+                self.from_word_vec_partial(next_crossword, next_candidates, seed)
+            }))
     }
 
     fn from_word_vec_recursive<'b>(&'b self, crossword: Crossword, candidates: Rc<Vec<usize>>, seed: u64) -> Box<Iterator<Item=Crossword> + 'b> {

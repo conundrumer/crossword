@@ -4,7 +4,7 @@ use bounding_box::BoundingBox;
 use grid::Grid;
 use word_placements::WordPlacements;
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct Crossword {
     pub positions: WordPlacements,
     grid: Grid
