@@ -23,29 +23,26 @@ use std::env;
 use generate::Generator;
 
 fn main() {
-    let mut num_areas = 0;
-    let mut seed = 0;
+    let flags = vec!["-n", "-s", "-t"];
+    let mut arg_vals = vec![None; flags.len()];
     let args: Vec<_> = env::args().collect();
     for pair in args.windows(2) {
         let (option, arg) = (pair[0].clone(), pair[1].clone());
-        match &*option {
-            "-n" => match arg.parse::<usize>() {
-                Ok(n) => { num_areas = n },
-                Err(e) => {
-                    println!("-n {}: {}", arg, e);
-                    return
+        for i in 0..arg_vals.len() {
+            if &*option == flags[i] {
+                match arg.parse::<u64>() {
+                    Ok(n) => { arg_vals[i] = Some(n) },
+                    Err(e) => {
+                        println!("-s {}: {}", arg, e);
+                        return
+                    }
                 }
-            },
-            "-s" => match arg.parse::<u64>() {
-                Ok(n) => { seed = n },
-                Err(e) => {
-                    println!("-s {}: {}", arg, e);
-                    return
-                }
-            },
-            _ => {}
+            }
         }
     }
+    let num_areas = arg_vals[0].unwrap_or(0) as usize;
+    let seed = arg_vals[1].unwrap_or(0) as u64;
+    let num_iters = arg_vals[2].unwrap_or(1) as usize;
 
     let stdin = io::stdin();
     let words = stdin.lock().lines()
@@ -54,18 +51,18 @@ fn main() {
         .collect::<Vec<_>>();
     let words = words.iter().map(|s| s).collect();
     let gen = Generator::new(words, num_areas, seed);
-    let iter = gen.iter();
-        // .scan(0, |state, cw| {
-        //     if cw.num_overlaps() >= *state {
-        //         *state = cw.num_overlaps();
-        //         return Some(Some(cw))
-        //     }
-        //     Some(None)
-        // }).filter_map(|x| x);
-
-    // println!("{}", iter.count());
+    let mut iters = vec![];
+    for _ in 0..num_iters {
+        let iter = gen.iter();
+        iters.push(iter);
+    }
     println!("{}", gen);
-    for crossword in iter {
-        println!("{}", crossword);
+    loop {
+        let count = (0..num_iters).filter_map(|i| iters[i].next()).inspect(|crossword| {
+            println!("{}", crossword);
+        }).count();
+        if count == 0 {
+            break
+        }
     }
 }

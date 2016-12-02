@@ -1,4 +1,5 @@
 use std::rc::Rc;
+use std::cell::Cell;
 
 use crossword::Crossword;
 use placement::{Position, START_POSITION};
@@ -7,6 +8,7 @@ use rand::{hash, rand_range};
 
 pub struct Generator<'a> {
     seed: u64,
+    next_seed: Cell<u64>,
     word_list: Vec<&'a String>,
     word_chars_list: Vec<Vec<char>>,
     filter: Filter,
@@ -15,6 +17,7 @@ impl<'a> Generator<'a> {
     pub fn new(words: Vec<&'a String>, num_areas: usize, seed: u64) -> Generator<'a> {
         Generator {
             seed: seed,
+            next_seed: Cell::new(seed),
             word_list: words.clone(),
             word_chars_list: words.iter().map(|word| word.chars().collect()).collect(),
             filter: Filter::new(num_areas)
@@ -27,23 +30,27 @@ impl<'a> Generator<'a> {
         let first_word_len = self.word_chars_list[0].len();
         let init_crossword = Crossword::new(self.word_list.len()).set(first_word, first_word_len, 0, START_POSITION);
 
-        self.from_word_vec_recursive(init_crossword, Rc::new(candidates))
+        let seed = self.next_seed.get();
+        self.next_seed.set(hash(seed, self.seed));
+
+        self.from_word_vec_recursive(init_crossword, Rc::new(candidates), seed)
     }
 
-    fn from_word_vec_recursive<'b>(&'b self, crossword: Crossword, candidates: Rc<Vec<usize>>) -> Box<Iterator<Item=Crossword> + 'b> {
+    fn from_word_vec_recursive<'b>(&'b self, crossword: Crossword, candidates: Rc<Vec<usize>>, seed: u64) -> Box<Iterator<Item=Crossword> + 'b> {
         let n = candidates.len();
         if n == 0 {
             return Box::new(Some(crossword).into_iter());
         }
-        Box::new(self.from_word_vec(crossword, candidates)
+        Box::new(self.from_word_vec(crossword, candidates, seed)
             .flat_map(move |(next_crossword, next_candidates)| {
-                self.from_word_vec_recursive(next_crossword, next_candidates)
+                self.from_word_vec_recursive(next_crossword, next_candidates, seed)
             }))
     }
 
-    fn from_word_vec<'b>(&'b self, crossword: Crossword, candidates: Rc<Vec<usize>>) -> Box<Iterator<Item=(Crossword, Rc<Vec<usize>>)> + 'b> {
+    fn from_word_vec<'b>(&'b self, crossword: Crossword, candidates: Rc<Vec<usize>>, seed: u64) -> Box<Iterator<Item=(Crossword, Rc<Vec<usize>>)> + 'b> {
         let &Generator {
-            seed,
+            seed: _,
+            next_seed: _,
             ref filter,
             ref word_list,
             ref word_chars_list
