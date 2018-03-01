@@ -131,7 +131,7 @@ impl<'a> Generator<'a> {
                 .map(move |i2| ((word_index, word_len, candidate_index), char_pos, i2))
         };
         let filter_candidates = move |((word_index, word_len, candidate_index), (c1, pos), i2)| {
-            let word_chars = &word_chars_list[word_index];
+            let word_chars: &Vec<char> = &word_chars_list[word_index];
             let c2 = word_chars[i2];
             if c1 != c2 {
                 return None
